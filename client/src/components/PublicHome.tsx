@@ -5,7 +5,7 @@ import VehicleSlider from './VehicleSlider'
 import AuthModel from './AuthModel'
 
 function PublicHome() {
-    const [authOpen,setAuthOpen] = useState(false)
+    const [authOpen,setAuthOpen] = useState(true)
 
   return (
     <>
