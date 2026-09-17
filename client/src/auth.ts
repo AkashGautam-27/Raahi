@@ -4,7 +4,7 @@ import connectDB from "./lib/db"
 import User from "./models/user.model"
 import bcrypt from "bcryptjs"
 import Google from "next-auth/providers/google"
-import Email from "next-auth/providers/email"
+
  
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
