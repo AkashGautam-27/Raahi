@@ -15,10 +15,10 @@ RAAHI is a premium vehicle booking platform that offers a seamless and luxurious
 ## 📸 Screenshots
 
 ### Landing Page
-![Landing Page](./client/public/Screenshot2.png)
+![Landing Page](./client/public/landing.png)
 
 ### Login / Authentication
-![Login Modal](./client/public/Screenshot1.png) 
+![Login Modal](./client/public/login.png) 
 
 
 ## 🛠️ Tech Stack
