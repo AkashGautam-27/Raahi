@@ -13,7 +13,7 @@ type propType={
     onClose:()=>void
 }
 function AuthModel({open,onClose}:propType) {
-  const [step,setStep] = useState<stepType>("otp")
+  const [step,setStep] = useState<stepType>("login")
   const [name,setName] = useState("")
   const [email,setEmail] = useState("")
   const [password,setPassword] = useState("")
@@ -30,7 +30,24 @@ const handleSignUp=async ()=>{
     const {data} = await axios.post("/api/auth/register",{
       name,email,password
     });
+
+
     setStep("otp")
+    setLoading(false);
+  } catch (error:any) {
+    setLoading(false);
+    setErr(error.response.data.message ?? "something went wrong")
+  }
+}
+
+const handleVerifyEmail=async ()=>{
+  setLoading(true)
+  setErr("")
+  try {
+    const {data} = await axios.post("/api/auth/verify-email",{
+      email,otp:otp.join("")
+    });
+    setStep("login")
     setLoading(false);
   } catch (error:any) {
     setLoading(false);
@@ -168,9 +185,10 @@ const handleChangeOtp = (index:number,value:string)=>{
                   ))}
 
                   </div>
-                  <button className='mt-6 w-full h-11 rounded-xl bg-black text-white font-semibold hover:bg-gray-900 transition'>
-                  verify and create Account
-
+                   {err && <p className='text-red-500'>{err}</p>}
+                  <button className='mt-6 w-full h-11 rounded-xl bg-black text-white font-semibold hover:bg-gray-900 transition flex justify-center items-center' onClick={handleVerifyEmail}>
+                  
+                  {!loading?"verify and create Account":<CircleDashed size={18} color='white' className='animate-spin'/>}
                   </button>
 
                   </motion.div>
