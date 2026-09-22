@@ -28,8 +28,9 @@ const handleSignUp=async ()=>{
   setErr("")
   try {
     const {data} = await axios.post("/api/auth/register",{
+    
       name,email,password
-    });
+    });  console.log(data);
 
 
     setStep("otp")

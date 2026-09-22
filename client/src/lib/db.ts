@@ -20,8 +20,10 @@ const connectDB = async ()=>{
     try {
         const conn = await cached.promise
         return conn;
+        console.log("db connect")
     } catch (error) {
-        console.log(error)
+          cached.promise = null;
+        console.log("db connected error",error)
     }
 }
 
