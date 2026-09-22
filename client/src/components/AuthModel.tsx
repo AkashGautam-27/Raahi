@@ -5,7 +5,6 @@ import { CircleDashed, Lock, Mail, User, X } from 'lucide-react'
 import Image from 'next/image'
 import axios from 'axios'
 import { signIn, useSession } from 'next-auth/react'
-import { input } from 'motion/react-client'
 
 type stepType = "login" | "signup" | "otp"
 type propType={
@@ -20,6 +19,7 @@ function AuthModel({open,onClose}:propType) {
   const [loading,setLoading] = useState(false)
   const [err,setErr] = useState("")
   const {data} = useSession()
+  console.log(data)
   const [otp,setOtp] = useState(["","","","","",""])
   
 
@@ -35,7 +35,7 @@ const handleSignUp=async ()=>{
 
     setStep("otp")
     setLoading(false);
-  } catch (error:any) {
+  } catch (error : any) {
     setLoading(false);
     setErr(error.response.data.message ?? "something went wrong")
   }
@@ -48,6 +48,7 @@ const handleVerifyEmail=async ()=>{
     const {data} = await axios.post("/api/auth/verify-email",{
       email,otp:otp.join("")
     });
+    console.log(data)
     setStep("login")
     setLoading(false);
   } catch (error:any) {
