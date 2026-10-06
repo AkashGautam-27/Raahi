@@ -3,7 +3,6 @@ import React, { useState } from 'react'
 import { motion } from "motion/react"
 import { ArrowLeft, Bike, Car, Package, Truck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import vehicleModel from '@/models/vehicle.model'
 
 const VEHICLE = [
     { id: 1, label: "bike", desc: "2 Wheeler", Icon: Bike },
