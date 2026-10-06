@@ -9,11 +9,13 @@ import { signOut, useSession } from 'next-auth/react'
 import { Bike, Car, ChevronRight, LogOut, Menu, Truck, X } from 'lucide-react'
 import { useDispatch } from 'react-redux'
 import { setUserData } from '@/redux/userSlice'
+import { useRouter } from 'next/navigation'
 
 function Nav() {
   const Nav_Items = ["Home", "Bookings", "About Us", "Contact"]
   const [authOpen, setAuthOpen] = useState(false)
   const pathName = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
   console.log(session)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -86,7 +88,7 @@ function Nav() {
                         <p className='font-semibold text-lg'>{session.user.name}</p>
                         <p className='uppercase text-gray-500 mb-4 text-xs'>{session.user.role}</p>
                         {session.user.role != "partner" && (
-                          <div className='w-full flex items-center gap-3 py-3 hover:bg-gray-200 rounded-xl'>
+                          <div  onClick={() => router.push('/partner/onboarding/vehicle')} className='w-full flex items-center gap-3 py-3 hover:bg-gray-200 rounded-xl'>
                             <div className='flex -space-x-2'>
                               <div className='w-6 h-6 rounded-full bg-black text-white flex items-center justify-center'>
                                 <Bike size={16} />
@@ -203,7 +205,7 @@ function Nav() {
                 <p className='font-semibold text-lg'>{session.user.name}</p>
                 <p className='uppercase text-gray-500 mb-4 text-xs'>{session.user.role}</p>
                 {session.user.role != "partner" && (
-                  <div className='w-full flex items-center gap-3 py-3 hover:bg-gray-200 rounded-xl'>
+                  <div onClick={() => router.push('/partner/onboarding/vehicle')} className='w-full flex items-center gap-3 py-3 hover:bg-gray-200 rounded-xl'>
                     <div className='flex -space-x-2'>
                       <div className='w-6 h-6 rounded-full bg-black text-white flex items-center justify-center'>
                         <Bike size={16} />
