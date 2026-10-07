@@ -78,7 +78,7 @@ function Page() {
                 </div>
 
                 <div className='mt-4 flex items-start gap-3 text-xs text-gray-500'>
-                    <FileCheck size={20}  className="text-green-500 mt-0.5"/>
+                    <FileCheck size={20}  className="text-gray-500 mt-0.5"/>
                     <p className="leading-relaxed">By uploading these documents, you agree to our Terms of Service and Privacy Policy.</p>
                 </div>
 
