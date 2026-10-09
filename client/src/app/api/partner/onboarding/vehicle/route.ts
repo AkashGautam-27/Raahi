@@ -16,12 +16,13 @@ export async function POST(req: Request) {
                 { status: 401 }
             )
         }
-        const user = await User.findOne({ email: session.user.email })
+        let user = await User.findOne({ email: session.user.email })
         if (!user) {
-            return Response.json(
-                { message: "User not found" },  
-                { status: 404 }
-            )
+            user = await User.create({
+                name: session.user.name || "Unknown",
+                email: session.user.email,
+                role: session.user.role || "user"
+            })
         }
 
         const { type,number,vehicleModel } = await req.json()
