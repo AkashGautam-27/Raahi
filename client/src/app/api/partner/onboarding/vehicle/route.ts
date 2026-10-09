@@ -37,34 +37,38 @@ export async function POST(req: Request) {
                 { status: 400 }
             )
         }
-        const vehicleNumber = number.toUpperCase();
-        const duplicate = await Vehicle.findOne({number:vehicleNumber})
-        if(duplicate){
+        const vehicleNumberFormatted = number.toUpperCase();
+        const duplicate = await Vehicle.findOne({vehicleNumber:vehicleNumberFormatted})
+        if(duplicate && duplicate.owner.toString() !== user._id.toString()){
             return Response.json({message:"Vehicle already registered"},{status:400})
         }
-        const vehicle = await Vehicle.findOne({owner:user._id})
+        
+        let vehicle = await Vehicle.findOne({owner:user._id})
+        let statusCode = 200;
+        
         if(vehicle){
             vehicle.type = type
-            vehicle.number = vehicleNumber
+            vehicle.vehicleNumber = vehicleNumberFormatted
             vehicle.vehicleModel = vehicleModel
             vehicle.status = "pending"
             await vehicle.save()
-            return Response.json(vehicle, { status: 200 })
-        }
-            const newVehicle = await Vehicle.create({
+        } else {
+            vehicle = await Vehicle.create({
                 owner:user._id,
                 type,
-                number: vehicleNumber,
+                vehicleNumber: vehicleNumberFormatted,
                 vehicleModel,
                 status: "pending"
             })
+            statusCode = 201;
+        }
         
         if(user.partnerOnBoardingSteps<1){
             user.partnerOnBoardingSteps=1
         }
         user.role="partner"
         await user.save();
-            return Response.json(newVehicle, { status: 201 })
+        return Response.json(vehicle, { status: statusCode })
 
     } catch (err) {
         console.error("Error adding vehicle:", err)
@@ -102,9 +106,9 @@ export async function GET(req:NextRequest){
 
 
     } catch (error) {
-         console.error("Error adding vehicle:", error)
+         console.error("Error fetching vehicle:", error)
         return Response.json(
-            { message: "Error adding vehicle" },
+            { message: "Error fetching vehicle" },
             { status: 500 }
         )
     }

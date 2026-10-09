@@ -16,7 +16,7 @@ const VEHICLE = [
 
 function Page() {
     const router = useRouter()
-    const [vehicleType, setVehicleType] = useState<number | "">("")
+    const [vehicleType, setVehicleType] = useState<string>("")
     const [vehicleModel, setVehicleModel] = useState("")
     const [vehicleNumber, setVehicleNumber] = useState("")
 
@@ -57,13 +57,13 @@ const handleVehicle = async()=>{
                         <div className='grid grid-cols-2 sm:grid-cols-3 gap-4'>
                             {VEHICLE.map((v) => {
                                 const Icon = v.Icon
-                                const active = vehicleType === v.id
+                                const active = vehicleType === v.label
                                 return (<motion.div
                                     whileHover={{ scale: 1.05 }
                                     }
                                     whileTap={{ scale: 0.95 }}
                                     key={v.id}
-                                    onClick={() => setVehicleType(v.id)}
+                                    onClick={() => setVehicleType(v.label)}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 border rounded-2xl cursor-pointer transition ${active ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'}`}>
                                     <div className={`w-11 h-11 rounded-full flex items-center justify-center ${active ? 'bg-white text-black' : 'bg-black text-white'}`}><Icon size={24} /></div>
                                     <div className='text-sm font-medium text-gray-700'>{v.label}</div>

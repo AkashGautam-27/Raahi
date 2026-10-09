@@ -30,7 +30,7 @@ export async function POST(req:NextRequest){
             )
         }
 
-        const partnerBank= await PartnerBank.findByIdAndUpdate(
+        const partnerBank = await PartnerBank.findOneAndUpdate(
             {owner:user._id},
             {accountHolder,
             accountNumber,
@@ -80,15 +80,13 @@ export async function GET(req:NextRequest){
 
       
 
-        const partnerBank= await PartnerBank.findOne(
-            {owner:user._id},
-          
+        const partnerBank = await PartnerBank.findOne(
+            {owner:user._id}
         )
       if(partnerBank){
-    return Response.json(partnerBank, { status: 201 })
-
+        return Response.json(partnerBank, { status: 200 })
       }else{
-        return null
+        return Response.json({ message: "Bank details not found" }, { status: 404 })
       }
 
 
