@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { motion } from "motion/react"
 import { ArrowLeft, Bike, Car, Package, Truck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import axios from 'axios'
 
 const VEHICLE = [
     { id: 1, label: "bike", desc: "2 Wheeler", Icon: Bike },
@@ -18,6 +19,19 @@ function Page() {
     const [vehicleType, setVehicleType] = useState<number | "">("")
     const [vehicleModel, setVehicleModel] = useState("")
     const [vehicleNumber, setVehicleNumber] = useState("")
+
+const handleVehicle = async()=>{
+    try {
+        const {data} = await axios.post("/api/partner/onboarding/vehicle",{
+            type:vehicleType,number:vehicleNumber,vehicleModel
+    });
+    console.log(data)
+        
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 
     return (
         <div className='w-full min-h-screen flex items-center justify-center px-4'>
@@ -67,7 +81,7 @@ function Page() {
                         
                         placeholder='Enter vehicle number'
                         value={vehicleNumber}
-                        onChange={(e) => setVehicleNumber(e.target.value)}
+                        onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
                         className='mt-2 w-full border-b border-gray-300 pb-2   focus:outline-none focus:border-black transition'
                     />
                 </div>
@@ -87,6 +101,7 @@ function Page() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className='mt-8 w-full h-14 py-3 bg-black text-white rounded-2xl font-semibold transition flex items-center justify-center gap-2 disabled:opacity-40'
+                onClick={handleVehicle}
                 >
                     Continue
                 </motion.button>
