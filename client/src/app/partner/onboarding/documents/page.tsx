@@ -21,12 +21,7 @@ function Page() {
 
 
 
-    const handleImage = (doc: docsTypes, file: File | null) => {
-        if (!file) {
-            return
-        }
-        setDocs((prev) => ({ ...prev, [doc]: file }))
-    }
+   
 
     const handleDocs = async () => {
            setError("");
@@ -41,23 +36,32 @@ function Page() {
             formdata.append("aadhar", docs.aadhar)
             formdata.append("license", docs.license)
             formdata.append("rc", docs.rc)
-            const { data } = await axios.post("/api/partner/onboarding/document", formdata)
+            const { data } = await axios.post("/api/partner/onboarding/documents", formdata)
             console.log(data)
            
             setLoading(false)
-        } catch (error: any) {
-             console.log("Status:", error.response?.status);
-    console.log("Response:", error.response?.data);
-    console.log("URL:", error.config?.url);
+        }catch (error: any) {
+            console.log("Status:", error.response?.status);
+            console.log("Response:", error.response?.data);
+            console.log("URL:", error.config?.url);
 
-    setError(
-        error?.response?.data?.message ??
-        "something went wrong"
-    );
-            setLoading(false)
-         console.error("Upload error:", error);
+            setError(
+                error?.response?.data?.message ??
+                "Something went wrong"
+            );
+        } finally {
+            setLoading(false);
         }
     }
+
+     const handleImage = (doc: docsTypes, file: File | null) => {
+        if (!file) {
+            return
+        }
+        setDocs((prev) => ({ ...prev, [doc]: file }))
+    }
+
+    const isCompleted = docs.aadhar && docs.license && docs.rc
     return (
         <div className='w-full min-h-screen bg-white flex items-center justify-center px-4'>
             <motion.div
@@ -136,7 +140,7 @@ function Page() {
                     <p className='text-red-500 mt-4'>*{error}</p>
                 }
                 <motion.button
-                    disabled={loading}
+                    disabled={ !isCompleted || loading}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className='mt-8 w-full h-14 py-3 bg-black text-white rounded-2xl font-semibold transition flex items-center justify-center gap-2 disabled:opacity-40'

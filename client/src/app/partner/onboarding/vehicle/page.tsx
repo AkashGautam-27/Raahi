@@ -21,6 +21,7 @@ function Page() {
     const [vehicleNumber, setVehicleNumber] = useState("")
     const [error,setError] = useState(" ")
     const [loading,setLoading] = useState(false)
+    
 
 const handleVehicle = async()=>{
     setError("")
@@ -30,7 +31,9 @@ const handleVehicle = async()=>{
         const {data} = await axios.post("/api/partner/onboarding/vehicle",{
             type:vehicleType,number:vehicleNumber,vehicleModel
     });
+    console.log(data)
     setLoading(false)
+    // router.push("partner/onboarding/documents")
     } catch (error:any) {
         setError(error?.response?.data?.message ?? "something went wrong")
         setLoading(false)
