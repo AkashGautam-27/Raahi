@@ -441,15 +441,16 @@ const uploadDocument = async (
     const url = await uploadOnCloudinary(file);
 
     if (!url) {
-      throw new Error(`${documentName} upload failed`);
+      throw new Error(`${documentName} upload failed: no URL returned`);
     }
 
     return url;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`${documentName} upload failed:`, error);
-    throw new Error(
-      `${documentName} upload failed. Please try again.`
-    );
+    const detail =
+      error?.message ||
+      (typeof error === "string" ? error : JSON.stringify(error));
+    throw new Error(`${documentName} upload failed: ${detail}`);
   }
 };
 
