@@ -1,34 +1,61 @@
 import { v2 as cloudinary } from 'cloudinary'
 
 
-cloudinary.config({ 
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-  api_key: process.env.CLOUDINARY_API_KEY, 
-  api_secret: process.env.CLOUDINARY_API_SECRET
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const uploadOnCloudinary = async (file:Blob):Promise<string | null>=>{
-    if(!file) {
-        return null
-    }
-    try{
-        const arrayBufer = file.arrayBuffer()
-        const buffer = Buffer.from(await arrayBufer)
-        return new Promise((resolve,reject)=>{
-            const uploadStream = cloudinary.uploader.upload_stream({resource_type:"auto"},(error,result)=>{
-                if(error){
-                    reject(error)
-                }else{
-                    resolve(result?.secure_url ?? null)
-                }
-            })
-            uploadStream.end(buffer)
-        })
+const uploadOnCloudinary = async (
+  file: Blob
+): Promise<string | null> => {
+  if (!file || file.size === 0) {
+    throw new Error("File is empty or missing");
+  }
 
-    }catch(err){
-        console.error("Error uploading file to Cloudinary:", err)
-        return null
-    }
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const url = await new Promise<string>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: "auto",
+          folder: "raahi/documents",
+        },
+        (error, result) => {
+        //   if (error) {
+        //     console.error("Cloudinary SDK error:", error);
+        //     reject(error);
+        //     return;
+        //   }
+        if (error) {
+  console.error(
+    "Cloudinary error details:",
+    JSON.stringify(error, null, 2)
+  );
+  reject(error);
+  return;
 }
 
-export default uploadOnCloudinary
+          if (!result?.secure_url) {
+            reject(new Error("Cloudinary did not return a secure URL"));
+            return;
+          }
+
+          resolve(result.secure_url);
+        }
+      );
+
+      uploadStream.end(buffer);
+    });
+
+    return url;
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    throw error;
+  }
+};
+
+export default uploadOnCloudinary;

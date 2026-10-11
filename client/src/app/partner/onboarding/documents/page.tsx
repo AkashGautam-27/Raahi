@@ -29,25 +29,33 @@ function Page() {
     }
 
     const handleDocs = async () => {
+           setError("");
+
+    if (!docs.aadhar || !docs.license || !docs.rc) {
+        setError("Please upload all three documents");
+        return;
+    }
         try {
             setLoading(true)
             const formdata = new FormData()
-            if (!docs.aadhar || !docs.license || !docs.rc) {
-                return null
-            }
             formdata.append("aadhar", docs.aadhar)
             formdata.append("license", docs.license)
             formdata.append("rc", docs.rc)
-            const { data } = await axios.post("/api/partner/onboarding/documents", formdata)
+            const { data } = await axios.post("/api/partner/onboarding/document", formdata)
             console.log(data)
+           
             setLoading(false)
         } catch (error: any) {
-              console.log("Status:", error.response?.status);
-  console.log("Response:", error.response?.data);
-  console.log("URL:", error.config?.url);
-            setError(error?.response?.data?.message ?? "something went wrong")
+             console.log("Status:", error.response?.status);
+    console.log("Response:", error.response?.data);
+    console.log("URL:", error.config?.url);
+
+    setError(
+        error?.response?.data?.message ??
+        "something went wrong"
+    );
             setLoading(false)
-            console.log(error)
+         console.error("Upload error:", error);
         }
     }
     return (
@@ -68,7 +76,7 @@ function Page() {
                     <p className='text-2sm font-bold text-gray-800 mt-2'>Requires valid documents for verification</p>
                 </div>
                 <div className='mt-8 space-y-6'>
-                    <motion.label 
+                    <motion.label
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className='border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-between p-4 gap-3 cursor-pointer transition hover:border-black'
@@ -85,7 +93,7 @@ function Page() {
 
 
                     </motion.label>
-                    <motion.label 
+                    <motion.label
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className='border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-between p-4 gap-3 cursor-pointer transition hover:border-black'
@@ -101,7 +109,7 @@ function Page() {
                         <input type='file' hidden accept='image/*,.pdf' onChange={(e) => handleImage("license", e.target?.files?.[0] || null)} />
 
                     </motion.label>
-                    <motion.label 
+                    <motion.label
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className='border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-between p-4 gap-3 cursor-pointer transition hover:border-black'

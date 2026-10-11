@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 
 
 const VEHICLE_REGEX = /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/;
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
         await connectDB();
         const session = await auth();

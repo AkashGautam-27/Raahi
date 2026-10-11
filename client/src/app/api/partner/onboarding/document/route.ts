@@ -3,9 +3,10 @@ import uploadOnCloudinary from "@/lib/cloudinary";
 import connectDB from "@/lib/db";
 import PartnerDocs from "@/models/partnerDocs.model";
 import User from "@/models/user.model";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse} from "next/server";
 
-export async function POST(req:NextRequest){
+export async function POST(req:NextRequest,res:NextResponse){
+    console.log("api hit")
     try {
          await connectDB();
         const session = await auth();
@@ -57,7 +58,7 @@ export async function POST(req:NextRequest){
                 { status: 500 }
             )
             }
-            updatePayload.aadharUrl=url
+            updatePayload.licenseUrl=url
         }
 
            if(rc){
@@ -72,7 +73,8 @@ export async function POST(req:NextRequest){
         }
     
     
-        const partnerDocs =await PartnerDocs.findByIdAndUpdate({owner:user._id},{$set:updatePayload},{upsert:true,new:true})
+        const partnerDocs =await PartnerDocs.findOneAndUpdate({owner:user._id},{$set:updatePayload},{upsert:true,new:true,  runValidators: true,
+    setDefaultsOnInsert: true,})
 
           if(user.partnerOnBoardingSteps<2){
             user.partnerOnBoardingSteps=2
@@ -82,10 +84,17 @@ export async function POST(req:NextRequest){
     
     
     } catch (error) {
-          console.error("Error uploading documents:", error)
-        return Response.json(
-            { message: "Error uploading documents" },
-            { status: 500 }
-        )
-    }
+  console.error("Documents API error:", error);
+
+  return NextResponse.json(
+    {
+      message: "Document upload failed",
+      error:
+        error instanceof Error
+          ? error.message
+          : JSON.stringify(error),
+    },
+    { status: 500 }
+  );
+}
 }
