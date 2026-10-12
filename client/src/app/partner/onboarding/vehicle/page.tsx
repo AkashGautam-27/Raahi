@@ -33,7 +33,7 @@ const handleVehicle = async()=>{
     });
     console.log(data)
     setLoading(false)
-    // router.push("partner/onboarding/documents")
+    router.push("/partner/onboarding/documents")
     } catch (error:any) {
         setError(error?.response?.data?.message ?? "something went wrong")
         setLoading(false)

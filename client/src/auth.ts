@@ -72,9 +72,15 @@ Google({
         token.name=user.name;
         token.id=user.id;
         token.email=user.email;
-        token.role=user.role
+        token.role=user.role;
+      } else if(token.email){
+        await connectDB();
+        const dbUser = await User.findOne({email: token.email}).select("role");
+        if(dbUser){
+          token.role = dbUser.role;
+        }
       }
-        return token
+      return token;
     },
     async session({token,session}){
        if(session.user){

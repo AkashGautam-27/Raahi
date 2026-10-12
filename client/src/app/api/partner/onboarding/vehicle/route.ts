@@ -43,10 +43,10 @@
 //         if(duplicate && duplicate.owner.toString() !== user._id.toString()){
 //             return Response.json({message:"Vehicle already registered"},{status:400})
 //         }
-        
+
 //         let vehicle = await Vehicle.findOne({owner:user._id})
 //         let statusCode = 200;
-        
+
 //         if(vehicle){
 //             vehicle.type = type
 //             vehicle.vehicleNumber = vehicleNumberFormatted
@@ -63,7 +63,7 @@
 //             })
 //             statusCode = 201;
 //         }
-        
+
 //         if(user.partnerOnBoardingSteps<1){
 //             user.partnerOnBoardingSteps=1
 //         }
@@ -152,15 +152,20 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Find user in database
-    const user = await User.findOne({
-      email: session.user.email,
+    let user = await User.findOne({
+      $or: [
+        ...(session.user.id ? [{ _id: session.user.id }] : []),
+        { email: session.user.email },
+        { email: session.user.email?.toLowerCase() }
+      ]
     });
 
     if (!user) {
-      return NextResponse.json(
-        { message: "User not found" },
-        { status: 404 }
-      );
+      user = await User.create({
+        name: session.user.name || "Partner",
+        email: session.user.email,
+        role: session.user.role || "user"
+      });
     }
 
     // 4. Parse request body
@@ -295,7 +300,11 @@ export async function GET(_req: NextRequest) {
 
     // 3. Find user
     const user = await User.findOne({
-      email: session.user.email,
+      $or: [
+        ...(session.user.id ? [{ _id: session.user.id }] : []),
+        { email: session.user.email },
+        { email: session.user.email?.toLowerCase() }
+      ]
     });
 
     if (!user) {
@@ -322,20 +331,20 @@ export async function GET(_req: NextRequest) {
       { vehicle },
       { status: 200 }
     );
-  }  catch  (error: unknown) {
-  console.error("DOCUMENT UPLOAD ERROR:", error);
+  } catch (error: unknown) {
+    console.error("DOCUMENT UPLOAD ERROR:", error);
 
-  const message =
-    error instanceof Error
-      ? error.message
-      : "Unknown server error";
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown server error";
 
-  return NextResponse.json(
-    {
-      message: "Internal server error",
-      error: message,
-    },
-    { status: 500 }
-  );
-}
+    return NextResponse.json(
+      {
+        message: "Internal server error",
+        error: message,
+      },
+      { status: 500 }
+    );
+  }
 }
