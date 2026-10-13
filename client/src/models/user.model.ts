@@ -5,6 +5,7 @@ export interface IUser extends Document {
     email: string,
     password?: string,
     role: "user" | "partner" | "admin",
+    partnerStatus?: "pending" | "approved" | "rejected",
     isEmailVerified?: boolean,
     otp?: string,
     otpExpiresAt?: Date,
@@ -33,6 +34,11 @@ const userSchema = new mongoose.Schema<IUser>({
         default: "user",
         enum: ["user", "partner", "admin"]
     },
+    partnerStatus: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending"
+    },
     isEmailVerified: {
         type: Boolean,
         default: false
@@ -49,7 +55,8 @@ const userSchema = new mongoose.Schema<IUser>({
         min:0,
         max:8,
         default:0
-    },mobileNumber: {
+    },
+    mobileNumber: {
         type: String
     }
 }, { timestamps: true })

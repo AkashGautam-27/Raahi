@@ -19,12 +19,15 @@ export async function GET(req: NextRequest) {
 
         const totalPartners = await User.countDocuments({ role: "partner" });
         const totalApprovedPartners = await User.countDocuments({ role: "partner", partnerStatus: "approved" });
-        const totalPendingPartners = await User.countDocuments({ role: "partner", partnerStatus: "pending" });
+        const totalPendingPartners = await User.countDocuments({
+            role: "partner",
+            $or: [{ partnerStatus: "pending" }, { partnerStatus: { $exists: false } }]
+        });
         const totalRejectedPartners = await User.countDocuments({ role: "partner", partnerStatus: "rejected" });
 
         const pendingPartnersReviews = await User.find({
             role: "partner",
-            partnerStatus: "pending",
+            $or: [{ partnerStatus: "pending" }, { partnerStatus: { $exists: false } }],
             partnerOnBoardingSteps: { $gte: 3 }
         });
 
