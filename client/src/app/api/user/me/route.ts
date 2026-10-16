@@ -1,32 +1,46 @@
 import { auth } from "@/auth";
 import connectDB from "@/lib/db";
 import User from "@/models/user.model";
+import { NextResponse } from "next/server";
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
         await connectDB();
         const session = await auth();
-        if (!session || !session.user) {
-            return Response.json(
-                { message: "user is authenticated" },
-                { status: 400 }
-            )
+        if (!session || !session.user?.email) {
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
         }
-        const user = await User.findOne({ email: session.user?.email })
+
+        const user = await User.findOne({ email: session.user.email }).select("-password -otp -otpExpiresAt");
         if (!user) {
-            return Response.json(
-                { message: "user not found" },
-                { status: 400 }
-            )
+            return NextResponse.json(
+                { message: "User not found" },
+                { status: 404 }
+            );
         }
-        return Response.json(
-            user,
-            { status: 200 }
-        )
+
+        let needsSave = false;
+        // Auto-heal if partner is approved but onboarding step is outdated
+        if (user.partnerStatus === "approved") {
+            if (!user.partnerOnBoardingSteps || user.partnerOnBoardingSteps < 4) {
+                user.partnerOnBoardingSteps = 4;
+                needsSave = true;
+            }
+        }
+
+        if (needsSave) {
+            await user.save();
+        }
+
+        return NextResponse.json(user, { status: 200 });
     } catch (error) {
-        return Response.json(
+        console.error("api/user/me error:", error);
+        return NextResponse.json(
             { message: `get me error : ${error}` },
             { status: 500 }
-        )
+        );
     }
 }

@@ -89,12 +89,17 @@ export async function PATCH(
             return NextResponse.json({ message: "Invalid status value" }, { status: 400 });
         }
 
+        const isApproved = status === "approved";
+        const updatePayload: any = {
+            partnerStatus: status,
+            ...(isApproved
+                ? { role: "partner", rejectionReason: "", partnerOnBoardingSteps: 4 }
+                : { rejectionReason: rejectionReason || "" })
+        };
+
         const updatedPartner = await User.findByIdAndUpdate(
             id,
-            {
-                partnerStatus: status,
-                ...(status === "approved" ? { role: "partner" } : {})
-            },
+            { $set: updatePayload },
             { new: true }
         ).select("-password -otp -otpExpiresAt");
 

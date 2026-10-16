@@ -36,8 +36,6 @@ function PartnerDashboard() {
     const { userData } = useSelector((state: RootState) => state.user)
     const router = useRouter()
     const dispatch = useDispatch()
-    const [requestLoading, setRequestLoading] = useState(false)
-    const [showPricing, setShowPricing] = useState(false)
 
     // Fetch latest user data when PartnerDashboard mounts
     useEffect(() => {
@@ -60,7 +58,7 @@ function PartnerDashboard() {
             const isRejected = userData.partnerStatus === "rejected"
             const rawSteps = userData.partnerOnBoardingSteps || 0
 
-            // If admin approved partner, Step 4 (Review) is completed -> activeStep becomes 5 (Video KYC)
+            // If admin approved partner, Step 4 (Review) is completed -> activeStep becomes 5
             // If admin rejected partner, activeStep is 4 (Review)
             const stepsCompleted = (isApproved && rawSteps < 4)
                 ? 4
@@ -73,10 +71,6 @@ function PartnerDashboard() {
     }, [userData])
 
     const goToStep = (step: Step) => {
-        // if(step.id==6 && userData?.partnerStatus==="approved" && userData.videoKycStatus==="approved"){
-        //     setShowPricing(true)
-        //     return;
-        // }
         if (step.route && step.id <= activeStep) {
             router.push(step.route)
         }
@@ -158,15 +152,6 @@ function PartnerDashboard() {
                             icon={<Clock size={20} />}
                             title="Documents under review"
                             desc="Admin is verifying your vehicle, documents, and bank details."
-                        />
-                    )
-                }
-                {
-                    activeStep >= 5 && userData?.partnerStatus === "approved" && (
-                        <StatusCard
-                            icon={<Check size={20} />}
-                            title="Review Approved"
-                            desc="Admin has verified your details. Please continue with the remaining onboarding steps."
                         />
                     )
                 }
