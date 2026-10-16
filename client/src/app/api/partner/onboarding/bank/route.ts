@@ -33,18 +33,23 @@ export async function POST(req: NextRequest) {
         const partnerBank = await PartnerBank.findOneAndUpdate(
             { owner: user._id },
             {
-                accountHolderName: accountHolder,
-                accountNumber,
-                ifscCode: ifsc,
-                upiId: upi,
-                status: "added"
+                $set: {
+                    owner: user._id,
+                    accountHolderName: accountHolder,
+                    accountHolder: accountHolder,
+                    accountNumber: accountNumber,
+                    ifscCode: ifsc,
+                    ifsc: ifsc,
+                    upiId: upi,
+                    upi: upi,
+                    status: "added"
+                }
             },
-            { upsert: true, new: true }
+            { upsert: true, new: true, setDefaultsOnInsert: true }
         )
         user.mobileNumber = mobileNumber
-        if (user.partnerOnBoardingSteps < 3) {
-            user.partnerOnBoardingSteps = 3
-        }
+        user.partnerOnBoardingSteps = 3
+        user.partnerStatus = "pending"
         await user.save();
         return Response.json(partnerBank, { status: 201 })
 
@@ -82,11 +87,34 @@ export async function GET(req: NextRequest) {
 
 
 
-        const partnerBank = await PartnerBank.findOne(
+        let partnerBank = await PartnerBank.findOne(
             { owner: user._id }
         )
+        if (!partnerBank) {
+            partnerBank = await PartnerBank.findOne({
+                $or: [{ owner: null }, { owner: { $exists: false } }]
+            });
+            if (partnerBank) {
+                partnerBank.owner = user._id;
+                await partnerBank.save();
+            }
+        }
+
         if (partnerBank) {
-            return Response.json(partnerBank, { status: 200 })
+            return Response.json({
+                partnerBank: {
+                    accountHolder: partnerBank.accountHolderName,
+                    accountHolderName: partnerBank.accountHolderName,
+                    accountNumber: partnerBank.accountNumber,
+                    ifsc: partnerBank.ifscCode,
+                    ifscCode: partnerBank.ifscCode,
+                    upi: partnerBank.upiId,
+                    upiId: partnerBank.upiId,
+                    status: partnerBank.status
+                },
+                mobileNumber: user.mobileNumber || "",
+                ...partnerBank.toObject()
+            }, { status: 200 })
         } else {
             return Response.json({ message: "Bank details not found" }, { status: 404 })
         }

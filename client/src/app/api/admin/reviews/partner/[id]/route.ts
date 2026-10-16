@@ -34,7 +34,23 @@ export async function GET(
 
         const vehicle = await Vehicle.findOne({ owner: id });
         const documents = await PartnerDocs.findOne({ owner: id });
-        const bank = await PartnerBank.findOne({ owner: id });
+        let bank: any = await PartnerBank.findOne({ owner: id }).lean();
+
+        if (!bank) {
+            // Check if bank details were saved without owner due to previous upsert
+            const orphanedBank = await PartnerBank.findOne({
+                $or: [
+                    { owner: null },
+                    { owner: { $exists: false } }
+                ]
+            });
+            if (orphanedBank) {
+                orphanedBank.owner = id;
+                await orphanedBank.save();
+                bank = orphanedBank.toObject();
+            }
+        }
+        console.log("BANK RECORD LOADED:", bank);
 
         return NextResponse.json({
             partner,

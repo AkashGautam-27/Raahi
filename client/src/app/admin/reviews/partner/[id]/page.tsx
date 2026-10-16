@@ -143,19 +143,19 @@ export default function Page() {
                     <AnimatedCard title={"Bank Details"} icon={<Landmark size={18} />}>
                         <div className='flex justify-between text-sm'>
                             <span className='text-gray-500'>Account Holder</span>
-                            <span className='font-semibold'>{partnerBank?.accountHolderName || "-"}</span>
+                            <span className='font-semibold'>{(partnerBank as any)?.accountHolderName || (partnerBank as any)?.accountHolder || (partnerBank as any)?.holderName || (partnerBank as any)?.name || "-"}</span>
                         </div>
                         <div className='flex justify-between text-sm'>
                             <span className='text-gray-500'>Account Number</span>
-                            <span className='font-semibold'>{partnerBank?.accountNumber || "-"}</span>
+                            <span className='font-semibold'>{(partnerBank as any)?.accountNumber || (partnerBank as any)?.accountNo || "-"}</span>
                         </div>
                         <div className='flex justify-between text-sm'>
                             <span className='text-gray-500'>IFSC Code</span>
-                            <span className='font-semibold'>{partnerBank?.ifscCode || "-"}</span>
+                            <span className='font-semibold'>{(partnerBank as any)?.ifscCode || (partnerBank as any)?.ifsc || "-"}</span>
                         </div>
                         <div className='flex justify-between text-sm'>
                             <span className='text-gray-500'>Upi</span>
-                            <span className='font-semibold'>{partnerBank?.upiId || "-"}</span>
+                            <span className='font-semibold'>{(partnerBank as any)?.upiId || (partnerBank as any)?.upi || "-"}</span>
                         </div>
 
                     </AnimatedCard>

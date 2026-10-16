@@ -47,11 +47,20 @@ function Page() {
 
             try {
                 const { data } = await axios.get("/api/partner/onboarding/bank")
-                setAccountHolder(data.partnerBank.accountHolder)
-                setAccountNumber(data.partnerBank.accountNumber)
-                setIfsc(data.partnerBank.ifsc)
-                setUpi(data.partnerBank.upi)
-                setMobileNumber(data.mobileNumber)
+                if (data.partnerBank) {
+                    setAccountHolder(data.partnerBank.accountHolder || data.partnerBank.accountHolderName || "")
+                    setAccountNumber(data.partnerBank.accountNumber || "")
+                    setIfsc(data.partnerBank.ifsc || data.partnerBank.ifscCode || "")
+                    setUpi(data.partnerBank.upi || data.partnerBank.upiId || "")
+                } else if (data.accountHolderName) {
+                    setAccountHolder(data.accountHolderName || "")
+                    setAccountNumber(data.accountNumber || "")
+                    setIfsc(data.ifscCode || "")
+                    setUpi(data.upiId || "")
+                }
+                if (data.mobileNumber) {
+                    setMobileNumber(data.mobileNumber)
+                }
                 console.log(data)
 
             } catch (error: any) {
@@ -127,8 +136,15 @@ function Page() {
                     <div>
                         <label htmlFor='upi' className='block text-sm font-semibold text-gray-700 mb-1'>UPI ID (optional)</label>
                         <div className='flex items-center gap-2 mt-2'>
-                            <input type="text" name='upi' id='upi' className={`flex-1 border-b pb-2 text-sm focus:outline-none pl-3 rounded-lg border-gray-300 shadow-sm focus:border-black 
-                                ${!isAccountValid && accountNumber.length > 0 ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-black"}`} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />
+                            <input
+                                type="text"
+                                name='upi'
+                                id='upi'
+                                placeholder='UPI ID (e.g. name@upi)'
+                                className="flex-1 border-b pb-2 text-sm focus:outline-none pl-3 rounded-lg border-gray-300 shadow-sm focus:border-black"
+                                value={upi}
+                                onChange={(e) => setUpi(e.target.value)}
+                            />
                         </div>
                     </div>
 

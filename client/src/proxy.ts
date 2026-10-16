@@ -22,7 +22,7 @@ export async function proxy(req: NextRequest) {
         return NextResponse.redirect(new URL("/", req.url))
     }
     const role = session.user?.role
-    if (role === "admin" && pathname.startsWith("/admin")) {
+    if (role !== "admin" && pathname.startsWith("/admin")) {
         return NextResponse.redirect(new URL("/", req.url))
 
     }

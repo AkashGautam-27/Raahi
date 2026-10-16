@@ -2,10 +2,13 @@
 import { RootState } from '@/redux/store';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from "motion/react"
-import { Check, Lock } from 'lucide-react';
-
+import { Check, Clock, Lock } from 'lucide-react';
+import axios from 'axios';
+import { setUserData } from '@/redux/userSlice';
+import RejectionCard from './RejectionCard';
+import StatusCard from './StatusCard';
 
 type Step = {
     id: number,
@@ -32,17 +35,44 @@ function PartnerDashboard() {
     const [activeStep, setActiveStep] = useState(1)
     const { userData } = useSelector((state: RootState) => state.user)
     const router = useRouter()
+    const dispatch = useDispatch()
     const [requestLoading, setRequestLoading] = useState(false)
     const [showPricing, setShowPricing] = useState(false)
 
+    // Fetch latest user data when PartnerDashboard mounts
+    useEffect(() => {
+        const fetchLatestUser = async () => {
+            try {
+                const { data } = await axios.get("/api/user/me")
+                if (data) {
+                    dispatch(setUserData(data))
+                }
+            } catch (error) {
+                console.error("Failed to refresh user data in PartnerDashboard:", error)
+            }
+        }
+        fetchLatestUser()
+    }, [dispatch])
+
     useEffect(() => {
         if (userData) {
-            setActiveStep(userData.partnerOnBoardingSteps + 1)
+            const isApproved = userData.partnerStatus === "approved"
+            const isRejected = userData.partnerStatus === "rejected"
+            const rawSteps = userData.partnerOnBoardingSteps || 0
+
+            // If admin approved partner, Step 4 (Review) is completed -> activeStep becomes 5 (Video KYC)
+            // If admin rejected partner, activeStep is 4 (Review)
+            const stepsCompleted = (isApproved && rawSteps < 4)
+                ? 4
+                : (isRejected && rawSteps < 3)
+                    ? 3
+                    : rawSteps
+
+            setActiveStep(stepsCompleted + 1)
         }
     }, [userData])
 
     const goToStep = (step: Step) => {
-
         // if(step.id==6 && userData?.partnerStatus==="approved" && userData.videoKycStatus==="approved"){
         //     setShowPricing(true)
         //     return;
@@ -52,9 +82,8 @@ function PartnerDashboard() {
         }
     }
 
-
-    // const [vehicleData,setVehicleData]=useState<IVehicle | null>(null)
     const progressPercentage = ((activeStep - 1) / (TOTAL_STEPS - 1)) * 100;
+
     return (
         <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200 px-4 pt-28 pb-20'>
             <div className='max-w-7xl mx-auto space-y-16'>
@@ -64,7 +93,6 @@ function PartnerDashboard() {
                 </div>
                 <div className='bg-white rounded-3xl p-10 shadow-xl border overflow-x-auto'>
                     <div className='relative min-w-[800px]'>
-
                         <div className='absolute top-7 left-0 w-full h-[3px] bg-gray-200 rounded-full' />
                         <motion.div
                             animate={{ width: `${progressPercentage}%` }}
@@ -72,7 +100,7 @@ function PartnerDashboard() {
                             className="absolute top-7 left-0 h-[3px] bg-black rounded-full"
                         />
                         <div className='relative flex justify-between'>
-                            {STEPS.map((s, index) => {
+                            {STEPS.map((s) => {
                                 const completed = s.id < activeStep
                                 const active = s.id == activeStep
                                 const locked = s.id > activeStep
@@ -102,10 +130,8 @@ function PartnerDashboard() {
                                                     s.id
                                                 )
                                             }
-
                                         </div>
                                         <p className='mt-3 text-sm font-semibold text-center'>{s.title}</p>
-
                                     </motion.div>
                                 )
                             })}
@@ -113,6 +139,37 @@ function PartnerDashboard() {
                     </div>
                 </div>
 
+                {/* Step 4 Review Status Banners */}
+                {
+                    activeStep == 4 && userData?.partnerStatus === "rejected" && (
+                        <RejectionCard
+                            title="Partner Application Rejected"
+                            reason={userData.rejectionReason}
+                            actionLabel="Review and Update"
+                            onAction={() => {
+                                router.push("/partner/onboarding/vehicle")
+                            }}
+                        />
+                    )
+                }
+                {
+                    activeStep == 4 && (!userData?.partnerStatus || userData?.partnerStatus === "pending") && (
+                        <StatusCard
+                            icon={<Clock size={20} />}
+                            title="Documents under review"
+                            desc="Admin is verifying your vehicle, documents, and bank details."
+                        />
+                    )
+                }
+                {
+                    activeStep >= 5 && userData?.partnerStatus === "approved" && (
+                        <StatusCard
+                            icon={<Check size={20} />}
+                            title="Review Approved"
+                            desc="Admin has verified your details. Please continue with the remaining onboarding steps."
+                        />
+                    )
+                }
             </div>
         </div>
     )
