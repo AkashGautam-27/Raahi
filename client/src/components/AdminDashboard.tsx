@@ -44,7 +44,7 @@ export default function AdminDashboard() {
     }
 
     useEffect(() => {
-        // handleGetPendingKYC()
+        handleGetPendingKYC()
         handleGetData()
     }, [])
 
