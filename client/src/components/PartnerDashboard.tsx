@@ -9,7 +9,7 @@ import RejectionCard from './RejectionCard';
 import StatusCard from './StatusCard';
 import ActionCard from './ActionCard';
 import axios from 'axios';
-// import PricingModal from './PricingModal';
+import PricingModel from './PricingModel';
 import { IVehicle } from '@/models/vehicle.model';
 // import PartnerEarning from './PartnerEarning';
 type Step = {
@@ -47,6 +47,8 @@ function PartnerDashboard() {
     }, [userData])
 
     const handleGetPricing = async () => {
+        console.log(userData);
+
         try {
             const { data } = await axios.get("/api/partner/onboarding/pricing")
             console.log(data)
@@ -60,6 +62,10 @@ function PartnerDashboard() {
     }, [])
 
     const goToStep = (step: Step) => {
+        console.log("Clicked step:", step.id);
+        console.log("Active step:", activeStep);
+        console.log("Partner status:", userData?.partnerStatus);
+        console.log("Video KYC status:", userData?.videoKycStatus);
 
         if (step.id == 6 && userData?.partnerStatus === "approved" && userData.videoKycStatus === "approved") {
             setShowPricing(true)
@@ -198,7 +204,7 @@ function PartnerDashboard() {
 
 
 
-                {activeStep == 7 && vehicleData?.status == "pending" && (
+                {/* {activeStep == 7 && vehicleData?.status == "pending" && (
                     <StatusCard
                         icon={<Clock size={20} />}
                         title="Pricing Under Review"
@@ -229,12 +235,17 @@ function PartnerDashboard() {
                         </button>
 
                     </motion.div>
-                )}
+                )} */}
 
 
 
 
             </div>
+            <PricingModel
+                open={showPricing}
+                onClose={() => setShowPricing(false)}
+                data={vehicleData}
+            />
         </div>
     )
 }
