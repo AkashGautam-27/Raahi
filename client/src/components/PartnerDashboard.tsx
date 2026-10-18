@@ -204,7 +204,7 @@ function PartnerDashboard() {
 
 
 
-                {/* {activeStep == 7 && vehicleData?.status == "pending" && (
+                {activeStep == 7 && vehicleData?.status == "pending" && (
                     <StatusCard
                         icon={<Clock size={20} />}
                         title="Pricing Under Review"
@@ -235,7 +235,7 @@ function PartnerDashboard() {
                         </button>
 
                     </motion.div>
-                )} */}
+                )}
 
 
 
