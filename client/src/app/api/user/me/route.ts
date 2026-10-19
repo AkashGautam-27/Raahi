@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import connectDB from "@/lib/db";
 import User from "@/models/user.model";
+import Vehicle from "@/models/vehicle.model";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -27,6 +28,19 @@ export async function GET() {
         if (user.partnerStatus === "approved") {
             if (!user.partnerOnBoardingSteps || user.partnerOnBoardingSteps < 4) {
                 user.partnerOnBoardingSteps = 4;
+                needsSave = true;
+            }
+            if (user.partnerOnBoardingSteps === 4 && (!user.videoKycStatus || user.videoKycStatus === "not_required")) {
+                user.videoKycStatus = "pending";
+                needsSave = true;
+            }
+        }
+
+        // Auto-heal if vehicle is approved but onboarding step is still at 6
+        if (user.partnerOnBoardingSteps === 6) {
+            const vehicle = await Vehicle.findOne({ owner: user._id });
+            if (vehicle && vehicle.status === "approved") {
+                user.partnerOnBoardingSteps = 7;
                 needsSave = true;
             }
         }

@@ -76,7 +76,9 @@ function PartnerDashboard() {
         }
     }
 
-    const progressPercentage = ((activeStep - 1) / (TOTAL_STEPS - 1)) * 100
+    const progressPercentage = vehicleData?.status === "approved" && activeStep >= 7
+        ? 100
+        : Math.min(100, Math.max(0, ((activeStep - 1) / (TOTAL_STEPS - 1)) * 100))
     return (
         <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200 px-4 pt-28 pb-20'>
             <div className='max-w-7xl mx-auto space-y-16'>
@@ -96,9 +98,10 @@ function PartnerDashboard() {
                         />
                         <div className='relative flex justify-between'>
                             {STEPS.map((s, index) => {
-                                const completed = s.id < activeStep
-                                const active = s.id == activeStep
-                                const locked = s.id > activeStep
+                                const isVehicleApproved = vehicleData?.status === "approved";
+                                const completed = s.id < activeStep || (s.id <= 7 && isVehicleApproved && activeStep >= 7) || (s.id === 8 && isVehicleApproved && activeStep >= 8);
+                                const active = s.id == activeStep && !completed;
+                                const locked = s.id > activeStep && !completed;
 
                                 return (
                                     <motion.div
@@ -201,6 +204,7 @@ function PartnerDashboard() {
 
 
                 }
+
 
 
 

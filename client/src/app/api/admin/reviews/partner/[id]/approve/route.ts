@@ -27,6 +27,7 @@ export async function GET(
         partner.partnerStatus = "approved";
         partner.partnerOnBoardingSteps = 4;
         partner.rejectionReason = "";
+        partner.videoKycStatus = "pending";
         await partner.save();
 
         await Vehicle.updateMany({ owner: partnerId }, { status: "approved" });

@@ -71,8 +71,8 @@
 // //             }
 // //             updatePayload.rcUrl=url
 // //         }
-    
-    
+
+
 // //         const partnerDocs =await PartnerDocs.findOneAndUpdate({owner:user._id},{$set:updatePayload},{upsert:true,new:true,  runValidators: true,
 // //     setDefaultsOnInsert: true,})
 
@@ -81,8 +81,8 @@
 // //         }
 // //         await user.save();
 // //             return Response.json(partnerDocs, { status: 201 })
-    
-    
+
+
 // //     } catch (error) {
 // //   console.error("Documents API error:", error);
 
@@ -302,7 +302,7 @@ function escapeRegex(value: string): string {
 }
 
 export async function POST(req: NextRequest) {
-    console.log("api hit")
+  console.log("api hit")
   try {
     // 1. Connect to MongoDB
     await connectDB();
@@ -310,13 +310,13 @@ export async function POST(req: NextRequest) {
     // 2. Authenticate user
     const session = await auth();
     console.log("SESSION DEBUG:", {
-  userId: session?.user?.id,
-  email: session?.user?.email,
-});
+      userId: session?.user?.id,
+      email: session?.user?.email,
+    });
 
-const dbUserCount = await User.countDocuments();
+    const dbUserCount = await User.countDocuments();
 
-console.log("TOTAL USERS IN DB:", dbUserCount);
+    console.log("TOTAL USERS IN DB:", dbUserCount);
 
 
     if (!session?.user?.email) {
@@ -330,43 +330,43 @@ console.log("TOTAL USERS IN DB:", dbUserCount);
 
     // 3. Find user in MongoDB
 
-    
-// 3. Find logged-in user using session ID first
-const sessionUserId = session.user.id;
 
-let user = null;
+    // 3. Find logged-in user using session ID first
+    const sessionUserId = session.user.id;
 
-if (sessionUserId) {
-  user = await User.findById(sessionUserId);
-}
-console.log("FOUND USER:", user ? {
-  id: user._id.toString(),
-  email: user.email,
-} : null);
+    let user = null;
 
-// Fallback: find by email
-if (!user && session.user.email) {
-  const email = session.user.email.trim();
+    if (sessionUserId) {
+      user = await User.findById(sessionUserId);
+    }
+    console.log("FOUND USER:", user ? {
+      id: user._id.toString(),
+      email: user.email,
+    } : null);
 
-  user = await User.findOne({
-    email: {
-      $regex: `^${escapeRegex(email)}$`,
-      $options: "i",
-    },
-  });
-}
+    // Fallback: find by email
+    if (!user && session.user.email) {
+      const email = session.user.email.trim();
 
-if (!user) {
-  console.error("User lookup failed:", {
-    sessionUserId: session.user.id,
-    sessionEmail: session.user.email,
-  });
+      user = await User.findOne({
+        email: {
+          $regex: `^${escapeRegex(email)}$`,
+          $options: "i",
+        },
+      });
+    }
 
-  return NextResponse.json(
-    { message: "User not found. Please sign in again." },
-    { status: 404 }
-  );
-}
+    if (!user) {
+      console.error("User lookup failed:", {
+        sessionUserId: session.user.id,
+        sessionEmail: session.user.email,
+      });
+
+      return NextResponse.json(
+        { message: "User not found. Please sign in again." },
+        { status: 404 }
+      );
+    }
 
     // const user = await User.findOne({
     //   email: { $regex: new RegExp(`^${escapeRegex(email)}$`, "i") },
@@ -432,27 +432,27 @@ if (!user) {
     }
 
 
-// 6. Upload document to Cloudinary
-const uploadDocument = async (
-  file: File,
-  documentName: string
-): Promise<string> => {
-  try {
-    const url = await uploadOnCloudinary(file);
+    // 6. Upload document to Cloudinary
+    const uploadDocument = async (
+      file: File,
+      documentName: string
+    ): Promise<string> => {
+      try {
+        const url = await uploadOnCloudinary(file);
 
-    if (!url) {
-      throw new Error(`${documentName} upload failed: no URL returned`);
-    }
+        if (!url) {
+          throw new Error(`${documentName} upload failed: no URL returned`);
+        }
 
-    return url;
-  } catch (error: any) {
-    console.error(`${documentName} upload failed:`, error);
-    const detail =
-      error?.message ||
-      (typeof error === "string" ? error : JSON.stringify(error));
-    throw new Error(`${documentName} upload failed: ${detail}`);
-  }
-};
+        return url;
+      } catch (error: any) {
+        console.error(`${documentName} upload failed:`, error);
+        const detail =
+          error?.message ||
+          (typeof error === "string" ? error : JSON.stringify(error));
+        throw new Error(`${documentName} upload failed: ${detail}`);
+      }
+    };
 
     // 7. Upload all documents
     const [aadharUrl, licenseUrl, rcUrl] = await Promise.all([
@@ -486,8 +486,11 @@ const uploadDocument = async (
     // 9. Update onboarding step
     if ((user.partnerOnBoardingSteps ?? 0) < 2) {
       user.partnerOnBoardingSteps = 2;
-      await user.save();
+    } else {
+      user.partnerOnBoardingSteps = 3
     }
+    user.partnerStatus = "pending"
+    await user.save();
 
     // 10. Success response
     return NextResponse.json(

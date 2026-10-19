@@ -12,12 +12,12 @@ type PropsType = {
     data: IVehicle | null
 }
 
-function PricingModal({ open, onClose, data }: PropsType) {
+function PricingModel({ open, onClose, data }: PropsType) {
     const [image, setImage] = useState<File | null>(null)
     const [preview, setPreview] = useState<string | null>(null)
-    const [baseFare, setBaseFare] = useState(data?.baseFare?.toString() || "")
-    const [pricePerKM, setPricePerKM] = useState(data?.pricePerKM?.toString() || "")
-    const [waitingCharge, setWaitingCharge] = useState(data?.waitingCharge?.toString() || "")
+    const [baseFare, setBaseFare] = useState("")
+    const [pricePerKM, setPricePerKM] = useState("")
+    const [waitingCharge, setWaitingCharge] = useState("")
     const [loading, setLoading] = useState(false)
     const router = useRouter()
     useEffect(() => {
@@ -132,4 +132,4 @@ function PricingModal({ open, onClose, data }: PropsType) {
     )
 }
 
-export default PricingModal
+export default PricingModel

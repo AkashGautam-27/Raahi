@@ -236,7 +236,15 @@ export async function POST(req: NextRequest) {
       vehicle.number = vehicleNumber;
       vehicle.vehicleModel = normalizedModel;
       vehicle.status = "pending";
-
+      if (user.partnerOnBoardingSteps < 2) {
+        user.partnerOnBoardingSteps = 2
+        user.partnerStatus = "pending";
+        await user.save();
+      } else {
+        user.partnerOnBoardingSteps = 3
+        user.partnerStatus = "pending";
+        await user.save();
+      }
       await vehicle.save();
     } else {
       // 10B. Create a new vehicle

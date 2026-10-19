@@ -1,17 +1,17 @@
 import { auth } from "@/auth";
-import connectDB from "@/lib/db";
+import connectDb from "@/lib/db";
 import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
     try {
-        await connectDB();
+        await connectDb();
         const session = await auth();
         if (!session || !session.user?.email) {
             return NextResponse.json({ message: "unauthorized" }, { status: 401 });
         }
 
-        const partner = await User.findOne({ email: session.user.email });
+        const partner = await User.findOne({ email: session.user?.email });
         if (!partner) {
             return NextResponse.json({ message: "partner not found" }, { status: 404 });
         }
