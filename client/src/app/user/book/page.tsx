@@ -55,6 +55,36 @@ export default function page() {
     const canContinue = !!(vehicle && mobile && pickUp && drop && pickUpLat && pickUpLon && dropLat && dropLon)
 
 
+    const searchAddress = async (q: string, setResults: (r: Place[]) => void, restrict?: string | null) => {
+        try {
+            if (!q || q.trim().length < 3) {
+                setResults([])
+                return;
+            }
+            const { data } = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(q.trim())}&limit=6&lang=en`)
+            console.log(data)
+            let results: Place[] = (data.features ?? []).map((f: any) => ({
+                id: String(f.properties.osm_id),
+                name: f.properties.name,
+                city: f.properties.city,
+                state: f.properties.state,
+                country: f.properties.country,
+                countrycode: f.properties.countrycode,
+                lat: f.geometry.coordinates[1],
+                lng: f.geometry.coordinates[0]
+            }))
+            if (restrict) {
+                results = results.filter(r => r.country == restrict)
+            }
+            setResults(results)
+        } catch (error) {
+            console.log(error)
+            setResults([])
+        }
+    }
+
+    const suggestion = (p: Place) => [p.name, p.city, p.state, p.country].filter(Boolean).join(",")
+
     const useCurrentLocation = () => {
         if (!navigator.geolocation) return;
         setLocating(true)
@@ -249,7 +279,7 @@ export default function page() {
                                         <input
                                             onChange={(e) => {
                                                 setPickUp(e.target.value)
-                                                //   searchAddress(e.target.value,setPickUpSuggestions)
+                                                searchAddress(e.target.value, setPickUpSuggestions)
                                             }}
                                             value={pickUp}
                                             placeholder="Pickup location"
@@ -281,7 +311,7 @@ export default function page() {
                                                         animate={{ opacity: 1 }}
                                                         transition={{ delay: i * 0.03 }}
                                                         onClick={() => {
-                                                            //   setPickUp(suggestion(p))
+                                                            setPickUp(suggestion(p))
                                                             setPickUpCountry(p.country ?? "")
                                                             setPickUpLat(p.lat)
                                                             setPickUpLon(p.lng)
@@ -290,7 +320,7 @@ export default function page() {
                                                         className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
                                                     >
                                                         <MapPin size={13} className="text-zinc-400 flex-shrink-0" />
-                                                        {/* <span className="text-sm text-zinc-800 font-medium truncate">{suggestion(p)}</span> */}
+                                                        <span className="text-sm text-zinc-800 font-medium truncate">{suggestion(p)}</span>
                                                         <ChevronRight size={13} className="text-zinc-300 flex-shrink-0 ml-auto" />
 
                                                     </motion.div>
@@ -312,7 +342,7 @@ export default function page() {
                                         <input
                                             onChange={(e) => {
                                                 setDrop(e.target.value)
-                                                //   searchAddress(e.target.value,setDropSuggestions,pickUpCountry)
+                                                searchAddress(e.target.value, setDropSuggestions, pickUpCountry)
                                             }}
                                             disabled={!pickUpCountry}
                                             value={drop}
@@ -339,7 +369,7 @@ export default function page() {
                                                         animate={{ opacity: 1 }}
                                                         transition={{ delay: i * 0.03 }}
                                                         onClick={() => {
-                                                            //   setDrop(suggestion(p))
+                                                            setDrop(suggestion(p))
                                                             setDropCountry(p.country ?? "")
                                                             setDropLat(p.lat)
                                                             setDropLon(p.lng)
@@ -348,7 +378,7 @@ export default function page() {
                                                         className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
                                                     >
                                                         <Navigation size={13} className="text-zinc-400 flex-shrink-0" />
-                                                        {/* <span className="text-sm text-zinc-800 font-medium truncate">{suggestion(p)}</span> */}
+                                                        <span className="text-sm text-zinc-800 font-medium truncate">{suggestion(p)}</span>
                                                         <ChevronRight size={13} className="text-zinc-300 flex-shrink-0 ml-auto" />
 
                                                     </motion.div>
@@ -361,6 +391,27 @@ export default function page() {
                             </div>
 
 
+
+                        </motion.div>
+                        <motion.div
+                            variants={stepVariants}
+                            initial="hidden"
+                            animate="visible"
+                            transition={{ delay: 0.3 }}
+                        >
+                            <motion.button
+                                whileTap={{ scale: 0.97 }}
+                                whileHover={canContinue ? { scale: 1.02 } : {}}
+                                disabled={!canContinue}
+                                onClick={() => {
+                                    router.push(`/user/search?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobile=${encodeURIComponent(mobile)}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}&droplon=${dropLon}`)
+                                }}
+                                className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-black disabled:opacity-35 text-white font-black text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors shadow-lg disabled:shadow-none"
+
+                            >
+                                <span>Continue</span>
+
+                            </motion.button>
 
                         </motion.div>
                     </div>
