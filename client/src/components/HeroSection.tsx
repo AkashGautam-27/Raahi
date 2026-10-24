@@ -7,14 +7,19 @@ import { useSelector } from 'react-redux'
 import { useRouter } from 'next/navigation'
 import { getSocket } from '@/lib/socket'
 
+
 function HeroSection({ onAuthRequired }: { onAuthRequired: () => void },) {
 
   const { userData } = useSelector((state: RootState) => state.user)
   const router = useRouter()
+
   useEffect(() => {
+    if (!userData?._id) return
     const socket = getSocket()
-    socket.emit("identity", { userId: userData?._id })
-  }, [userData])
+    socket.emit("identity", userData._id)
+  }, [userData?._id])
+
+
 
 
   return (

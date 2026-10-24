@@ -4,15 +4,16 @@ import PublicHome from "@/components/PublicHome";
 import PartnerDashboard from "@/components/PartnerDashboard";
 import AdminDashboard from "@/components/AdminDashboard";
 import { auth } from "@/auth";
-import connectDB from "@/lib/db";
+import connectDb from "@/lib/db";
 import User from "@/models/user.model";
+import GeoUpdater from "@/components/GeoUpdater";
 
 export default async function Home() {
   const session = await auth();
 
   let user = null;
   if (session?.user?.email) {
-    await connectDB();
+    await connectDb();
     user = await User.findOne({ email: session.user.email });
   }
 
@@ -24,6 +25,7 @@ export default async function Home() {
 
   return (
     <div className="w-full min-h-screen bg-white">
+      <GeoUpdater userId={user?._id?.toString() ?? ""} />
       <Nav />
       {role === "partner" ? (
         <PartnerDashboard />
