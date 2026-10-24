@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import "leaflet/dist/leaflet.css";
 import L from "leaflet"
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet'
 import axios from 'axios'
@@ -174,7 +175,7 @@ function SearchMap({ pickUp, drop, onChange, onDistance }: props) {
                 <TileLayer
 
                     attribution='&copy; <a href="https://carto.com/">"CARTO"</a> contributors'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+                    url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`} />
 
                 {p1 && p2 && <FitBounds p1={p1} p2={p2} />}
 
