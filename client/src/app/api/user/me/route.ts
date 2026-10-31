@@ -1,12 +1,12 @@
 import { auth } from "@/auth";
-import connectDB from "@/lib/db";
+import connectDb from "@/lib/db";
 import User from "@/models/user.model";
 import Vehicle from "@/models/vehicle.model";
 import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-        await connectDB();
+        await connectDb();
         const session = await auth();
         if (!session || !session.user?.email) {
             return NextResponse.json(

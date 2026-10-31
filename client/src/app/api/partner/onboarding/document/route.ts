@@ -284,7 +284,7 @@
 
 import { auth } from "@/auth";
 import uploadOnCloudinary from "@/lib/cloudinary";
-import connectDB from "@/lib/db";
+import connectDb from "@/lib/db";
 import PartnerDocs from "@/models/partnerDocs.model";
 import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
@@ -305,7 +305,7 @@ export async function POST(req: NextRequest) {
   console.log("api hit")
   try {
     // 1. Connect to MongoDB
-    await connectDB();
+    await connectDb();
 
     // 2. Authenticate user
     const session = await auth();

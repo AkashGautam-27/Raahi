@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { AnimatePresence, motion } from "motion/react"
 import { ArrowLeft, ArrowRight, Banknote, Bike, Car, CheckCircle, Clock, CreditCard, IndianRupee, Loader2, MapPin, Navigation, RefreshCcw, Search, Shield, Truck, Wallet, XCircle, Zap } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation';
+import axios from 'axios';
 
 
 const VEHICLE_META: any = {
@@ -18,13 +19,13 @@ type Status = "idle" | "requested" | "awaiting_payment"
 function checkoutContent() {
     const router = useRouter()
     const params = useSearchParams()
-    const [pickUp, setPickUp] = useState(params.get("pickUp") || "")
+    const [pickUp, setPickUp] = useState(params.get("pickUp") || params.get("pickup") || "")
     const [drop, setDrop] = useState(params.get("drop") || "")
     const mobile = params.get("mobile")
-    const pickUpLat = Number(params.get("pickUpLat"))
-    const pickUpLon = Number(params.get("pickUpLon"))
-    const dropLat = Number(params.get("dropLat"))
-    const dropLon = Number(params.get("dropLon"))
+    const pickUpLat = Number(params.get("pickUpLat") || params.get("pickuplat") || 0)
+    const pickUpLon = Number(params.get("pickUpLon") || params.get("pickuplon") || 0)
+    const dropLat = Number(params.get("dropLat") || params.get("droplat") || 0)
+    const dropLon = Number(params.get("dropLon") || params.get("droplon") || 0)
     const vehicle = params.get("vehicle") || ""
     const driverId = params.get("driverId") || ""
     const vehicleId = params.get("vehicleId") || ""
@@ -36,6 +37,36 @@ function checkoutContent() {
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash")
 
 
+
+    const handleRequestBooking = async () => {
+        setLoading(true)
+        try {
+            console.log(dropLat)
+            const { data } = await axios.post("/api/booking/create", {
+
+                driverId,
+                vehicleId,
+                pickUpAddress: pickUp,
+                dropAddress: drop,
+                pickUpLocation: {
+                    type: "Point",
+                    coordinates: [pickUpLon, pickUpLat]
+                },
+                dropLocation: {
+                    type: "Point",
+                    coordinates: [dropLon, dropLat]
+                },
+                fare,
+                mobileNumber: mobile,
+            })
+            setBooking(data)
+            setLoading(false)
+            setStatus("requested")
+        } catch (error: any) {
+            setLoading(false)
+            console.log(error.response.data.message)
+        }
+    }
     return (
         <div className='min-h-screen bg-zinc-100 px-4 py-12'>
             <div className='relative max-w-6xl mx-auto z-10'>
@@ -165,7 +196,7 @@ function checkoutContent() {
                                         <motion.button
                                             whileTap={{ scale: 0.97 }}
                                             whileHover={{ scale: 1.02 }}
-                                            // onClick={handleRequestBooking}
+                                            onClick={handleRequestBooking}
                                             className="w-full h-14 mt-8 bg-zinc-900 hover:bg-black disabled:opacity-40 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-colors shadow-md"
                                         >
                                             <span >Request Ride </span><ArrowRight size={15} />

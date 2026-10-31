@@ -5,19 +5,19 @@ if (!mongodbUrl) {
     throw new Error("Database url not found !...")
 }
 
-let cached =global.mongooseConn;
+let cached = global.mongooseConn;
 
 if (!cached) {
     cached = global.mongooseConn = { conn: null, promise: null };
 }
 
-const connectDB = async () => {
+const connectDb = async () => {
     if (cached.conn) {
         return cached.conn;
     }
 
-     if(!cached.promise){
-        cached.promise = mongoose.connect(mongodbUrl).then(c=>c.connection)
+    if (!cached.promise) {
+        cached.promise = mongoose.connect(mongodbUrl).then(c => c.connection)
     }
     try {
         cached.conn = await cached.promise;
@@ -30,4 +30,4 @@ const connectDB = async () => {
     return cached.conn;
 };
 
-export default connectDB;
+export default connectDb;

@@ -4,6 +4,7 @@ import "./globals.css";
 import Provider from "@/lib/Provider";
 import ReduxProvider from "@/redux/ReduxProvider";
 import InitUser from "@/InitUser";
+import "leaflet/dist/leaflet.css"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,11 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <Provider>
           <ReduxProvider>
-            <InitUser/>
-          {children}
+            <InitUser />
+            {children}
           </ReduxProvider>
-          </Provider> 
-        </body>
+        </Provider>
+      </body>
     </html>
   );
 }

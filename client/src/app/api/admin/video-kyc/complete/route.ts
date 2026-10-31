@@ -1,11 +1,11 @@
 import { auth } from "@/auth";
-import connectDB from "@/lib/db";
+import connectDb from "@/lib/db";
 import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
-        await connectDB();
+        await connectDb();
         const session = await auth();
         if (!session || !session.user?.email || session.user.role !== "admin") {
             return NextResponse.json({ message: "unauthorized" }, { status: 401 });

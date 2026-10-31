@@ -2,9 +2,12 @@
 import React, { useState } from 'react'
 import { AnimatePresence, motion } from "motion/react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Bike, Car, CheckCircle, ChevronRight, LocateFixed, MapPin, Navigation, Phone, Truck } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { ArrowLeft, Bike, Car, CheckCircle, ChevronRight, LocateFixed, Map, MapPin, Navigation, Phone, Truck } from 'lucide-react'
 import { VehicleType } from '@/models/vehicle.model'
 import axios from 'axios'
+
+const LocationPickerModal = dynamic(() => import('@/components/LocationPickerModal'), { ssr: false })
 
 
 
@@ -43,16 +46,39 @@ export default function page() {
     const [pickUp, setPickUp] = useState("")
     const [drop, setDrop] = useState("")
     const [pickUpCountry, setPickUpCountry] = useState("")
-    const [pickUpLat, setPickUpLat] = useState<Number>()
-    const [pickUpLon, setPickUpLon] = useState<Number>()
+    const [pickUpLat, setPickUpLat] = useState<number>()
+    const [pickUpLon, setPickUpLon] = useState<number>()
     const [dropCountry, setDropCountry] = useState("")
-    const [dropLat, setDropLat] = useState<Number>()
-    const [dropLon, setDropLon] = useState<Number>()
+    const [dropLat, setDropLat] = useState<number>()
+    const [dropLon, setDropLon] = useState<number>()
     const [locating, setLocating] = useState(false)
     const [pickUpSuggestions, setPickUpSuggestions] = useState<Place[]>([])
     const [dropSuggestions, setDropSuggestions] = useState<Place[]>([])
+    const [mapModal, setMapModal] = useState<{
+        isOpen: boolean;
+        type: 'pickup' | 'drop';
+    }>({
+        isOpen: false,
+        type: 'pickup'
+    });
     const progress = [!!vehicle, !!(mobile.length == 10), !!pickUp, !!drop].filter(Boolean).length
     const canContinue = !!(vehicle && mobile && pickUp && drop && pickUpLat && pickUpLon && dropLat && dropLon)
+
+    const handleLocationFromMap = (result: { address: string; country: string; lat: number; lng: number }) => {
+        if (mapModal.type === 'pickup') {
+            setPickUp(result.address);
+            setPickUpCountry(result.country);
+            setPickUpLat(result.lat);
+            setPickUpLon(result.lng);
+            setPickUpSuggestions([]);
+        } else {
+            setDrop(result.address);
+            setDropCountry(result.country);
+            setDropLat(result.lat);
+            setDropLon(result.lng);
+            setDropSuggestions([]);
+        }
+    };
 
 
     const searchAddress = async (q: string, setResults: (r: Place[]) => void, restrict?: string | null) => {
@@ -61,7 +87,17 @@ export default function page() {
                 setResults([])
                 return;
             }
-            const { data } = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(q.trim())}&limit=6&lang=en`)
+            const { data } = await axios.get("https://api.geoapify.com/v1/geocode/autocomplete",
+                {
+                    params: {
+                        text: q.trim(),
+                        limit: 6,
+                        lang: "en",
+                        filter: "countrycode:in",
+                        apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY
+                    }
+                }
+            );
             console.log(data)
             let results: Place[] = (data.features ?? []).map((f: any) => ({
                 id: String(f.properties.osm_id),
@@ -90,7 +126,14 @@ export default function page() {
         setLocating(true)
         navigator.geolocation.getCurrentPosition(async ({ coords }) => {
             try {
-                const { data } = await axios.get(`https://photon.komoot.io/reverse?lon=${coords.longitude}&lat=${coords.latitude}&lang=en`)
+                const { data } = await axios.get("https://api.geoapify.com/v1/geocode/reverse", {
+                    params: {
+                        lat: coords.latitude,
+                        lon: coords.longitude,
+                        apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+                        filter: "countrycode:in"
+                    }
+                })
                 if (data?.features?.length) {
                     const p = data.features[0].properties
                     const address = [p.name, p.street, p.city, p.state, p.country].filter(Boolean).join(",")
@@ -119,6 +162,7 @@ export default function page() {
             >
                 <div className='flex items-center gap-4 mb-6 px-1'>
                     <motion.button
+                        suppressHydrationWarning
                         whileTap={{ scale: 0.88 }}
                         onClick={() => router.push("/")}
                         className="w-11 h-11 rounded-2xl bg-white border border-zinc-200 shadow-sm flex items-center justify-center hover:bg-zinc-50 transition-colors flex-shrink-0"
@@ -226,6 +270,7 @@ export default function page() {
                                     <Phone size={14} className='text-zinc-600' />
                                 </div>
                                 <input
+                                    suppressHydrationWarning
                                     type="tel"
                                     value={mobile}
                                     onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
@@ -277,6 +322,7 @@ export default function page() {
                                         </div>
 
                                         <input
+                                            suppressHydrationWarning
                                             onChange={(e) => {
                                                 setPickUp(e.target.value)
                                                 searchAddress(e.target.value, setPickUpSuggestions)
@@ -285,14 +331,29 @@ export default function page() {
                                             placeholder="Pickup location"
                                             className="flex-1 bg-transparent text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 outline-none"
                                         />
-                                        <motion.button
-                                            whileTap={{ scale: 0.88 }}
-                                            onClick={useCurrentLocation}
-                                            disabled={locating}
-                                            className="w-8 h-8 rounded-xl bg-zinc-200 hover:bg-zinc-300 transition-colors flex items-center justify-center flex-shrink-0"
-                                        >
-                                            <LocateFixed size={14} className={`text-zinc-700 ${locating ? "animate-spin" : ""}`} />
-                                        </motion.button>
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                            <motion.button
+                                                suppressHydrationWarning
+                                                type="button"
+                                                whileTap={{ scale: 0.88 }}
+                                                onClick={() => setMapModal({ isOpen: true, type: 'pickup' })}
+                                                title="Choose pickup on map"
+                                                className="w-8 h-8 rounded-xl bg-zinc-200 hover:bg-zinc-300 transition-colors flex items-center justify-center"
+                                            >
+                                                <Map size={14} className="text-zinc-700" />
+                                            </motion.button>
+                                            <motion.button
+                                                suppressHydrationWarning
+                                                type="button"
+                                                whileTap={{ scale: 0.88 }}
+                                                onClick={useCurrentLocation}
+                                                disabled={locating}
+                                                title="Use current location"
+                                                className="w-8 h-8 rounded-xl bg-zinc-200 hover:bg-zinc-300 transition-colors flex items-center justify-center"
+                                            >
+                                                <LocateFixed size={14} className={`text-zinc-700 ${locating ? "animate-spin" : ""}`} />
+                                            </motion.button>
+                                        </div>
 
                                     </div>
                                     <AnimatePresence>
@@ -340,6 +401,7 @@ export default function page() {
                                         </div>
 
                                         <input
+                                            suppressHydrationWarning
                                             onChange={(e) => {
                                                 setDrop(e.target.value)
                                                 searchAddress(e.target.value, setDropSuggestions, pickUpCountry)
@@ -350,7 +412,22 @@ export default function page() {
                                             className="flex-1 bg-transparent text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 outline-none"
                                         />
 
-                                        <Navigation size={14} className='text-zinc-300 flex-shrink-0' />
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                            <motion.button
+                                                suppressHydrationWarning
+                                                type="button"
+                                                whileTap={{ scale: 0.88 }}
+                                                disabled={!pickUpCountry}
+                                                onClick={() => setMapModal({ isOpen: true, type: 'drop' })}
+                                                title={pickUpCountry ? "Choose drop on map" : "Select Pick up Location First"}
+                                                className="w-8 h-8 rounded-xl bg-zinc-200 hover:bg-zinc-300 disabled:opacity-40 disabled:hover:bg-zinc-200 transition-colors flex items-center justify-center"
+                                            >
+                                                <Map size={14} className="text-zinc-700" />
+                                            </motion.button>
+                                            <div className="w-8 h-8 rounded-xl flex items-center justify-center">
+                                                <Navigation size={14} className='text-zinc-300' />
+                                            </div>
+                                        </div>
 
                                     </div>
                                     <AnimatePresence>
@@ -400,6 +477,7 @@ export default function page() {
                             transition={{ delay: 0.3 }}
                         >
                             <motion.button
+                                suppressHydrationWarning
                                 whileTap={{ scale: 0.97 }}
                                 whileHover={canContinue ? { scale: 1.02 } : {}}
                                 disabled={!canContinue}
@@ -417,6 +495,17 @@ export default function page() {
                     </div>
                 </div>
             </motion.div>
+
+            <LocationPickerModal
+                isOpen={mapModal.isOpen}
+                onClose={() => setMapModal(prev => ({ ...prev, isOpen: false }))}
+                type={mapModal.type}
+                initialLat={mapModal.type === 'pickup' ? pickUpLat : (dropLat || pickUpLat)}
+                initialLng={mapModal.type === 'pickup' ? pickUpLon : (dropLon || pickUpLon)}
+                initialAddress={mapModal.type === 'pickup' ? pickUp : drop}
+                restrictCountry={mapModal.type === 'drop' ? pickUpCountry : undefined}
+                onConfirm={handleLocationFromMap}
+            />
         </div>
     )
 }

@@ -8,9 +8,7 @@ const SearchMap = dynamic(() => import("@/components/SearchMap"), { ssr: false }
 
 import axios from 'axios'
 import { VehicleType } from '@/models/vehicle.model'
-// import VehicleCard from './VehicleCard'
 import VehicleCard from '@/components/VehicleCard'
-
 
 const VEHICLE_META: any = {
     bike: { label: "Bike", Icon: Bike },
@@ -19,6 +17,7 @@ const VEHICLE_META: any = {
     loading: { label: "Loading", Icon: Truck },
     truck: { label: "Truck", Icon: Truck },
 };
+
 interface IVehicle {
     _id: string
     owner: string
@@ -34,25 +33,40 @@ interface IVehicle {
     isActive: boolean,
     createdAt: Date,
     updatedAt: Date
-
 }
+
 function SearchPage() {
     const router = useRouter()
     const params = useSearchParams()
-    const [pickUp, setPickUp] = useState(params.get("pickup") || "")
+    const [pickUp, setPickUp] = useState(params.get("pickup") || params.get("pickUp") || "")
     const [drop, setDrop] = useState(params.get("drop") || "")
     const [km, setKm] = useState<number>(0)
     const mobile = params.get("mobile")
-    const pickUpLat = Number(params.get("pickuplat"))
-    const pickUpLon = Number(params.get("pickuplon"))
-    const dropLat = Number(params.get("droplat"))
-    const dropLon = Number(params.get("droplon"))
+
+    const initialPickUpLat = Number(params.get("pickuplat") || params.get("pickUpLat") || 0)
+    const initialPickUpLon = Number(params.get("pickuplon") || params.get("pickUpLon") || 0)
+    const initialDropLat = Number(params.get("droplat") || params.get("dropLat") || 0)
+    const initialDropLon = Number(params.get("droplon") || params.get("dropLon") || 0)
+
+    const [coords, setCoords] = useState<{
+        pickUpLat: number;
+        pickUpLon: number;
+        dropLat: number;
+        dropLon: number;
+    }>({
+        pickUpLat: initialPickUpLat,
+        pickUpLon: initialPickUpLon,
+        dropLat: initialDropLat,
+        dropLon: initialDropLon,
+    })
+
     const vehicle = params.get("vehicle") || ""
     const [vehicles, setVehicles] = useState<IVehicle[]>([])
     const [loading, setLoading] = useState(false)
     const meta = VEHICLE_META[vehicle]
 
     const getNearByVehicles = async (latitude: number, longitude: number, vehicleType: string | null) => {
+        if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude) || latitude === 0) return
         setLoading(true)
         try {
             const { data } = await axios.post("/api/vehicles/near-by", {
@@ -61,15 +75,18 @@ function SearchPage() {
             setVehicles(data)
             setLoading(false)
         } catch (error) {
-            console.log(error)
+            console.error("Error fetching nearby vehicles:", error)
             setLoading(false)
         }
     }
 
     useEffect(() => {
-        getNearByVehicles(pickUpLat, pickUpLon, vehicle)
-    }, [pickUpLat, pickUpLon, pickUp])
-
+        const lat = coords.pickUpLat || initialPickUpLat
+        const lon = coords.pickUpLon || initialPickUpLon
+        if (lat && lon && lat !== 0) {
+            getNearByVehicles(lat, lon, vehicle)
+        }
+    }, [coords.pickUpLat, coords.pickUpLon, initialPickUpLat, initialPickUpLon, vehicle])
 
     return (
         <div className='min-h-screen bg-zinc-100 text-zinc-900 overflow-x-hidden'>
@@ -86,20 +103,34 @@ function SearchPage() {
                 <SearchMap
                     pickUp={pickUp}
                     drop={drop}
-                    onChange={(p, d) => { setPickUp(p); setDrop(d) }}
+                    pickUpLat={coords.pickUpLat || initialPickUpLat}
+                    pickUpLon={coords.pickUpLon || initialPickUpLon}
+                    dropLat={coords.dropLat || initialDropLat}
+                    dropLon={coords.dropLon || initialDropLon}
+                    onChange={(p, d, p1, p2) => {
+                        setPickUp(p)
+                        setDrop(d)
+                        if (p1 && p2) {
+                            setCoords({
+                                pickUpLat: p1[0],
+                                pickUpLon: p1[1],
+                                dropLat: p2[0],
+                                dropLon: p2[1],
+                            })
+                            getNearByVehicles(p1[0], p1[1], vehicle)
+                        }
+                    }}
                     onDistance={setKm}
                 />
-
             </div>
+
             <motion.div
                 initial={{ y: 60, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 160, damping: 22 }}
                 className="relative z-20 -mt-2 bg-white rounded-t-[28px] border-t border-zinc-200 shadow-[0_-8px_40px_rgba(0,0,0,0.08)] pt-5 pb-20 min-h-[52vh]"
             >
-
                 <div className='px-5 lg:px-8 max-w-6xl mx-auto'>
-
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -121,7 +152,6 @@ function SearchPage() {
                         <div className='flex gap-3 px-4 py-3 border-b border-zinc-100'>
                             <div className='flex flex-col items-center pt-1.5 flex-shrink-0'>
                                 <div className='w-2.5 h-2.5 rounded-full bg-zinc-900' />
-
                             </div>
 
                             <div className='flex-1 min-w-0'>
@@ -130,11 +160,7 @@ function SearchPage() {
                             </div>
                             <Navigation size={14} className="text-zinc-400 flex-shrink-0 mt-1.5" />
                         </div>
-
-
                     </motion.div>
-
-
 
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -145,21 +171,17 @@ function SearchPage() {
                         <div>
                             <h2 className='text-zinc-900 text-lg font-black tracking-tight'>
                                 {loading
-                                    ?
-                                    "Finding Vehicles"
-                                    :
-                                    vehicles.length > 0
-                                        ?
-                                        "Available"
-                                        :
-                                        "No Nearby Vehicles"
+                                    ? "Finding Vehicles"
+                                    : vehicles.length > 0
+                                        ? "Available"
+                                        : "No Nearby Vehicles"
                                 }
                             </h2>
-                            {
-                                meta && <div className='text-zinc-400 text-xs mt-0.5'>
+                            {meta && (
+                                <div className='text-zinc-400 text-xs mt-0.5'>
                                     {meta.label} rides near your pickup
                                 </div>
-                            }
+                            )}
                         </div>
                         <AnimatePresence mode='wait'>
                             {loading ? (
@@ -172,28 +194,21 @@ function SearchPage() {
                                 >
                                     <div className='w-3.5 h-3.5 rounded-full border-2 border-zinc-300 border-t-zinc-700 animate-spin' />
                                     <span className='text-zinc-500 text-xs font-semibold'>Searching...</span>
-
                                 </motion.div>
-                            )
-                                :
-                                vehicles.length > 0 ? (
-                                    <motion.div
-                                        key="live"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full"
-                                    >
-                                        <Zap size={11} className="text-emerald-600 fill-emerald-600" />
-                                        <span className='text-emerald-700 text-xs font-bold'>Live</span>
-
-                                    </motion.div>
-                                ) : null
-
-
-                            }
+                            ) : vehicles.length > 0 ? (
+                                <motion.div
+                                    key="live"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full"
+                                >
+                                    <Zap size={11} className="text-emerald-600 fill-emerald-600" />
+                                    <span className='text-emerald-700 text-xs font-bold'>Live</span>
+                                </motion.div>
+                            ) : null}
                         </AnimatePresence>
-
                     </motion.div>
+
                     <AnimatePresence>
                         {!loading && vehicles.length === 0 && (
                             <motion.div
@@ -206,15 +221,18 @@ function SearchPage() {
                                     <Search size={26} className="text-zinc-400" />
                                 </div>
                                 <p className='text-zinc-900 font-bold text-base mb-1'>Vehicles Not Found</p>
-                                <p className='text-zinc-400 text-sm max-w-xs leading-relaxed'>{meta.label || "Vehicle"} drivers are available near your pickup right now.</p>
+                                <p className='text-zinc-400 text-sm max-w-xs leading-relaxed'>No {meta?.label || "vehicle"} drivers are available near your pickup right now.</p>
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => getNearByVehicles(pickUpLat, pickUpLon, vehicle)}
+                                    onClick={() => {
+                                        const lat = coords.pickUpLat || initialPickUpLat
+                                        const lon = coords.pickUpLon || initialPickUpLon
+                                        getNearByVehicles(lat, lon, vehicle)
+                                    }}
                                     className="mt-5 flex items-center gap-2 bg-zinc-900 text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-zinc-800 transition-colors"
                                 >
                                     <RefreshCcw size={14} /> Retry Search
                                 </motion.button>
-
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -230,36 +248,33 @@ function SearchPage() {
                                 <VehicleCard
                                     vehicle={v}
                                     distance={km}
-                                    onBook={
-                                        () => {
-                                            const url = new URLSearchParams({
-                                                pickUp,
-                                                drop,
-                                                vehicle: v.type,
-                                                driverId: v.owner,
-                                                vehicleId: String(v._id),
-                                                fare: String(Math.round(v.baseFare! + (v.pricePerKM! * km))),
-                                                pickUpLat: String(pickUpLat),
-                                                pickUpLon: String(pickUpLon),
-                                                dropLat: String(dropLat),
-                                                dropLon: String(dropLon),
-                                                mobile: String(mobile)
-                                            })
-                                            router.push(`/user/checkout?${url.toString()}`)
-                                        }
-                                    }
-                                />
+                                    onBook={() => {
+                                        const activePickUpLat = coords.pickUpLat || initialPickUpLat
+                                        const activePickUpLon = coords.pickUpLon || initialPickUpLon
+                                        const activeDropLat = coords.dropLat || initialDropLat
+                                        const activeDropLon = coords.dropLon || initialDropLon
 
+                                        const url = new URLSearchParams({
+                                            pickUp,
+                                            drop,
+                                            vehicle: v.type,
+                                            driverId: v.owner,
+                                            vehicleId: String(v._id),
+                                            fare: String(Math.round(v.baseFare! + (v.pricePerKM! * km))),
+                                            pickUpLat: String(activePickUpLat),
+                                            pickUpLon: String(activePickUpLon),
+                                            dropLat: String(activeDropLat),
+                                            dropLon: String(activeDropLon),
+                                            mobile: String(mobile || "")
+                                        })
+                                        router.push(`/user/checkout?${url.toString()}`)
+                                    }}
+                                />
                             </motion.div>
                         ))}
-
                     </div>
-
-
-
                 </div>
             </motion.div>
-
         </div>
     )
 }
