@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from "motion/react"
 import Image from 'next/image'
 import Link from 'next/link'
@@ -7,15 +7,18 @@ import { usePathname } from 'next/navigation'
 import AuthModel from './AuthModel'
 import { signOut, useSession } from 'next-auth/react'
 import { Bike, Car, ChevronRight, LogOut, Menu, Truck, X } from 'lucide-react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { setUserData } from '@/redux/userSlice'
 import { useRouter } from 'next/navigation'
+import { RootState } from '@/redux/store'
+import axios from 'axios'
 
 function Nav() {
   const Nav_Items = ["Home", "Bookings", "About Us", "Contact"]
   const [authOpen, setAuthOpen] = useState(false)
   const pathName = usePathname()
   const router = useRouter()
+  const { userData } = useSelector((state: RootState) => state.user)
   const { data: session } = useSession()
   console.log(session)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -27,6 +30,27 @@ function Nav() {
 
   }
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0)
+
+
+
+  const fetchCount = async () => {
+    try {
+      const { data } = await axios.get("/api/partner/bookings/pending-requests-count")
+      console.log(data)
+      setPendingCount(data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    if (userData?.role == "partner") {
+      fetchCount()
+    }
+  }, [userData?.role])
+
+
   return (
     <>
       <motion.div
@@ -43,18 +67,30 @@ function Nav() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
             className='hidden md:flex items-center gap-10'>
-            {Nav_Items.map((i, index) => {
-              let href;
-              if (i == "Home") {
-                href = `/`
-              } else {
-                href = `/${i.toLowerCase()}`
-              }
-              const active = href == pathName
-              return <Link key={index} href={href} className={`text-sm font-medium transition ${active
-                ? "text-white"
-                : "text-gray-400 hover:text-white"}`}>{i}</Link>
-            })}
+            {userData?.role == "partner" ? (
+              <>
+                <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/"}>Home</Link>
+                <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/partner/pending-requests"}>Pending Requests
+                  <span className="absolute -top-2 -right-5 w-6 h-6 bg-white text-black text-xs rounded-full flex items-center justify-center font-bold">{pendingCount ?? 0}</span>
+                </Link>
+                <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/partner/bookings"}>Bookings</Link>
+                <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/partner/active-ride"}>Active Ride</Link>
+              </>
+            ) :
+              Nav_Items.map((i, index) => {
+                let href;
+                if (i == "Home") {
+                  href = `/`
+                } else {
+                  href = `/${i.toLowerCase()}`
+                }
+                const active = href == pathName
+                return <Link key={index} href={href} className={`text-sm font-medium transition ${active
+                  ? "text-white"
+                  : "text-gray-400 hover:text-white"}`}>{i}</Link>
+              })
+            }
+
           </motion.div>
           <div className="flex items-center gap-3 relative">
             <div className="hidden md:block relative">
@@ -88,7 +124,7 @@ function Nav() {
                         <p className='font-semibold text-lg'>{session.user.name}</p>
                         <p className='uppercase text-gray-500 mb-4 text-xs'>{session.user.role}</p>
                         {session.user.role != "partner" && (
-                          <div  onClick={() => router.push('/partner/onboarding/vehicle')} className='w-full flex items-center gap-3 py-3 hover:bg-gray-200 rounded-xl'>
+                          <div onClick={() => router.push('/partner/onboarding/vehicle')} className='w-full flex items-center gap-3 py-3 hover:bg-gray-200 rounded-xl'>
                             <div className='flex -space-x-2'>
                               <div className='w-6 h-6 rounded-full bg-black text-white flex items-center justify-center'>
                                 <Bike size={16} />
