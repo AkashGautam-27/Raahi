@@ -92,6 +92,90 @@ function checkoutContent() {
         fetchActiveBooking()
     }, [])
 
+
+    const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+
+            if (typeof window === "undefined") {
+                resolve(false)
+                return;
+            }
+
+            if ((window as any).Razorpay) {
+                resolve(true)
+                return;
+            }
+
+            const script = document.createElement("script")
+            script.src = "https://checkout.razorpay.com/v1/checkout.js"
+            script.onload = () => resolve(true)
+            script.onerror = () => resolve(false)
+            document.body.appendChild(script)
+        })
+    }
+
+
+    const handleConfirmPayment = async () => {
+        if (!booking || !paymentMethod) return;
+        setLoading(true)
+        try {
+
+            if (paymentMethod == "online") {
+                const razorpayLoaded = await loadRazorpayScript()
+                if (!razorpayLoaded) {
+                    alert("razorpay script failed to load")
+                }
+
+                const { data } = await axios.post("/api/payment/create", {
+                    bookingId: booking._id
+                })
+
+
+
+
+                const paymentObject = new (window as any).Razorpay({
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    amount: data.amount,
+                    currency: "INR",
+                    name: "RAAHI",
+                    description: "Ride Payment",
+                    order_id: data.orderId,
+                    handler: async function (response: any) {
+                        const { data } = await axios.post("/api/payment/verify", {
+                            bookingId: booking._id,
+                            ...response
+                        })
+                        setLoading(false)
+
+                        if (data.success) {
+                            setStatus("confirmed")
+                            window.location.href = `/ride/${booking._id}`
+                        }
+                    }
+
+
+
+                })
+
+                paymentObject.open()
+
+            } else {
+                const { data } = await axios.get(`/api/booking/${booking._id}/confirm`)
+                setLoading(false)
+                if (data.success) {
+                    setStatus("confirmed")
+                    window.location.href = `/user/ride/${booking._id}`
+                }
+            }
+        } catch (error) {
+            console.log(error)
+            setLoading(false)
+        }
+
+    }
+
+
+
     useEffect(() => {
         if (status !== "awaiting_payment") return;
         const t = setTimeout(() => {
@@ -365,7 +449,7 @@ function checkoutContent() {
                                         </div>
                                         <motion.button
                                             whileTap={{ scale: 0.97 }}
-                                            // onClick={handleConfirmPayment}
+                                            onClick={handleConfirmPayment}
                                             whileHover={paymentMethod ? { scale: 1.02 } : {}}
                                             disabled={!paymentMethod}
                                             className="w-full h-14 bg-zinc-900 hover:bg-black disabled:opacity-30 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-colors shadow-md mt-auto"
