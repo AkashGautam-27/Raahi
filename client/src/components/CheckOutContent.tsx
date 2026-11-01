@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from "motion/react"
 import { ArrowLeft, ArrowRight, Banknote, Bike, Car, CheckCircle, Clock, CreditCard, IndianRupee, Loader2, MapPin, Navigation, RefreshCcw, Search, Shield, Truck, Wallet, XCircle, Zap } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -67,6 +67,39 @@ function checkoutContent() {
             console.log(error.response.data.message)
         }
     }
+
+
+    const fetchActiveBooking = async () => {
+        try {
+            const { data } = await axios.get("/api/booking/active")
+            setBooking(data.booking)
+            setStatus(data.booking.bookingStatus || data.booking)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const handleCancel = async () => {
+        try {
+            const { data } = await axios.get(`/api/booking/${booking._id}/cancel`)
+            setStatus("idle")
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    useEffect(() => {
+        fetchActiveBooking()
+    }, [])
+
+    useEffect(() => {
+        if (status !== "awaiting_payment") return;
+        const t = setTimeout(() => {
+            setStatus("payment")
+        }, 2000)
+        return () => { clearTimeout(t) }
+    }, [status])
+
     return (
         <div className='min-h-screen bg-zinc-100 px-4 py-12'>
             <div className='relative max-w-6xl mx-auto z-10'>
@@ -233,7 +266,7 @@ function checkoutContent() {
 
                                         <motion.div
                                             whileTap={{ scale: 0.95 }}
-                                            // onClick={handleCancel}
+                                            onClick={handleCancel}
                                             className="flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-zinc-900 transition-colors border border-zinc-200 hover:border-zinc-400 px-4 py-2.5 rounded-xl"
                                         >
                                             <XCircle size={13} /> Cancel Request
