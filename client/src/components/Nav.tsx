@@ -82,7 +82,7 @@ function Nav() {
                 if (i == "Home") {
                   href = `/`
                 } else {
-                  href = `/${i.toLowerCase()}`
+                  href = `/user/${i.toLowerCase()}`
                 }
                 const active = href == pathName
                 return <Link key={index} href={href} className={`text-sm font-medium transition ${active

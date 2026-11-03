@@ -63,7 +63,7 @@ const bookingSchema = new mongoose.Schema<IBooking>({
     },
     driver: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Driver",
         required: true
     },
     vehicle: {
