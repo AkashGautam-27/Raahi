@@ -12,6 +12,7 @@ import { setUserData } from '@/redux/userSlice'
 import { useRouter } from 'next/navigation'
 import { RootState } from '@/redux/store'
 import axios from 'axios'
+import { getSocket } from '@/lib/socket'
 
 function Nav() {
   const Nav_Items = ["Home", "Bookings", "About Us", "Contact"]
@@ -51,6 +52,16 @@ function Nav() {
   }, [userData?.role])
 
 
+  useEffect(() => {
+    const socket = getSocket()
+    console.log(socket)
+    socket.on("new-booking", (data) => {
+      setPendingCount(prev => prev + 1)
+    })
+    return () => {
+      socket.off("new-booking")
+    }
+  }, [])
   return (
     <>
       <motion.div

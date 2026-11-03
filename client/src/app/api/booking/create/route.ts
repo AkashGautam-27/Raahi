@@ -76,11 +76,11 @@ export async function POST(req: NextRequest) {
             bookingStatus: "requested"
         })
 
-        // await axios.post(`${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL}/emit`,{
-        //    event:"new-booking",
-        //    userId:driverId,
-        //    data:booking
-        // })
+        await axios.post(`${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL}/emit`, {
+            event: "new-booking",
+            userId: driverId,
+            data: booking
+        })
 
 
         return NextResponse.json(

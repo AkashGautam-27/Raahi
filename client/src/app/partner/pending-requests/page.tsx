@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { motion } from "motion/react"
 import { Clock, IndianRupee, Loader2, MapPin, Navigation } from 'lucide-react'
 import { BookingStatus, PaymentStatus } from '@/models/booking.model'
+import { getSocket } from '@/lib/socket'
 
 interface IBooking {
     _id: string
@@ -84,6 +85,19 @@ function page() {
     useEffect(() => {
         fetchPendingRequests()
     }, [])
+
+    useEffect(() => {
+        const socket = getSocket()
+        console.log(socket)
+        socket.on("new-booking", (data) => {
+            setBookings((prev) => [...prev, data])
+        })
+        return () => {
+            socket.off("new-booking")
+        }
+    }, [])
+
+
     return (
         <div className='min-h-screen bg-[#f4f5f7]'>
             <div className='bg-white border-b border-gray-200'>

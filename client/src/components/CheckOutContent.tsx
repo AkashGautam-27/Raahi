@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { ArrowLeft, ArrowRight, Banknote, Bike, Car, CheckCircle, Clock, CreditCard, IndianRupee, Loader2, MapPin, Navigation, RefreshCcw, Search, Shield, Truck, Wallet, XCircle, Zap } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
+import { getSocket } from '@/lib/socket';
 
 
 const VEHICLE_META: any = {
@@ -90,6 +91,20 @@ function checkoutContent() {
 
     useEffect(() => {
         fetchActiveBooking()
+    }, [])
+
+    useEffect(() => {
+        const socket = getSocket()
+        socket.on("accept-booking", (data) => {
+            setStatus(data)
+        })
+        socket.on("reject-booking", (data) => {
+            setStatus(data)
+        })
+        return () => {
+            socket.off("accept-booking")
+            socket.off("reject-booking")
+        }
     }, [])
 
 
@@ -183,6 +198,8 @@ function checkoutContent() {
         }, 2000)
         return () => { clearTimeout(t) }
     }, [status])
+
+
 
     return (
         <div className='min-h-screen bg-zinc-100 px-4 py-12'>
