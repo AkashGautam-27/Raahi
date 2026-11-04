@@ -13,7 +13,7 @@ const getVehicleIcon = (vehicleType?: string) => {
         case 'bike':
             return <Bike size={18} className=" text-white" />;
         case 'auto':
-            return <Car size={18} className=" text-white" />; // You can add Auto icon if available
+            return <Car size={18} className=" text-white" />;
         case 'truck':
             return <Truck size={18} className=" text-white" />;
         case 'loading':
@@ -140,7 +140,7 @@ function PanelContent({ isActive, displayDistance, displayEta, cfg, status, book
                             <p className='text-sm font-bold text-zinc-900 truncate'>{booking.vehicle.vehicleModel ?? "vehicle"}</p>
                         </div>
                         <div className='flex-shrink-0 bg-zinc-900 px-3 py-1.5 rounded-lg'>
-                            <p className='text-white text-xs font-black tracking-widest font-mono'>{booking.vehicle.number ?? "number"}</p>
+                            <p className='text-white text-xs font-black tracking-widest font-mono'>{booking.vehicle.vehicleNumber ?? "number"}</p>
                         </div>
                     </div>
                 </div>

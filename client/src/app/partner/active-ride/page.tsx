@@ -124,6 +124,24 @@ function page() {
         return () => { navigator.geolocation.clearWatch(watchId) }
     }, [booking?._id])
 
+    const onChatToggle = () => {
+        setChatOpen(prev => !prev)
+    }
+
+
+    useEffect(() => {
+
+        if (!booking?._id) return;
+        const socket = getSocket()
+        socket.emit("join-ride", booking?._id)
+        socket.on("driver-location", ({ latitude, longitude }) => {
+            setDriverPos([latitude, longitude])
+        })
+        return () => {
+            socket.off("join-ride")
+            socket.off("driver-location")
+        }
+    }, [booking?._id])
 
     if (loading) {
         return (
@@ -163,7 +181,11 @@ function page() {
     const displayEta = status === "confirmed" ? etaToPickUp : etaToDrop
     const displayDistance = status === "confirmed" ? distanceToPickUp : distanceToDrop
     const paymentStatus = PAYMENT_BADGE[booking?.paymentStatus! ?? "pending"]
-    const panelProps = { isActive, displayDistance, displayEta, cfg, status, booking, paymentStatus, canChat, chatOpen, currentRole: "driver" }
+    const panelProps = { isActive, displayDistance, displayEta, cfg, status, booking, paymentStatus, canChat, onChatToggle, chatOpen, currentRole: "driver" }
+
+
+
+
     return (
         <div className='h-screen w-full bg-zinc-100 flex flex-col lg:flex-row overflow-hidden'>
             <div className='relative flex-1 h-full z-0'>
@@ -355,6 +377,201 @@ function page() {
 
                 </div>
             </motion.div>
+
+            <div className='lg:hidden fixed bottom-0 left-0 right-0 z-20 pointer-events-none'>
+                <motion.div
+                    className="bg-white rounded-t-3xl shadow-2xl pointer-events-auto overflow-hidden flex flex-col"
+                    animate={{ height: expanded ? "82vh" : 142 }}
+                    transition={{ type: "spring", stiffness: 320, damping: 38 }}
+                >
+                    <div
+                        className='flex-shrink-0 cursor-pointer select-none'
+                        onClick={() => setExpanded(p => !p)}
+
+                    >
+                        <div className='pt-3 pb-1'>
+                            <div className='w-10 h-1 bg-zinc-200 rounded-full mx-auto' />
+                        </div>
+
+                        <div className='px-5 py-3 flex items-center justify-between'>
+                            <div className='flex items-center gap-3'>
+                                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                                <div>
+                                    <p className='text-sm font-bold text-zinc-900 leading-tight'>{cfg.label}</p>
+                                    <p className='text-xs text-zinc-400 leading-tight'>{cfg.sublabel}</p>
+                                </div>
+                            </div>
+                            <div className='flex items-center gap-3'>
+                                {isActive && (
+                                    <div className='text-right'>
+                                        <p className='text-2xl font-black text-zinc-900 leading-none'>{Math.round(displayEta)}</p>
+                                        <p className='text-[10px] text-zinc-400 uppercase tracking-wider'>min</p>
+                                    </div>
+                                )}
+                                <motion.div
+                                    animate={{ rotate: expanded ? 180 : 0 }}
+                                    transition={{ duration: 0.28 }}
+                                    className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center"
+                                >
+                                    <ChevronUp size={16} className="text-zinc-600" />
+
+                                </motion.div>
+                            </div>
+                        </div>
+                        <div className='h-px bg-zinc-100 mx-5' />
+
+                    </div>
+
+                    <div className='flex-1 overflow-y-auto min-h-0'>
+                        <PanelContent {...panelProps} />
+                    </div>
+
+
+                    <div className='flex-shrink-0 border-t border-zinc-100 bg-white px-5 py-4'>
+                        <AnimatePresence mode='wait'>
+                            {status === "confirmed" && !otpMode && !otpVerified && (
+                                <motion.button
+                                    key="arrived"
+                                    onClick={() => {
+                                        // handleSendPickUpOtp()
+                                    }}
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    className="w-full bg-zinc-900 hover:bg-zinc-800 active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2"
+                                >
+                                    <MapPin size={15} /> I've Arrived at Pickup <ArrowRight size={15} className="ml-1" />
+
+                                </motion.button>
+                            )}
+
+                            {status === "confirmed" && otpMode && !otpVerified && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.98 }} transition={{ duration: 0.3 }}
+                                    className="bg-zinc-50 border border-zinc-200 rounded-2xl overflow-hidden"
+                                >
+                                    <div className='bg-zinc-950 px-4 py-3 flex items-center gap-2'>
+                                        <KeyRound size={14} className="text-amber-400" />
+                                        <p className='text-white text-xs font-bold tracking-wide uppercase'>Enter Customer OTP</p>
+                                    </div>
+                                    <div className='p-4 space-y-3'>
+                                        <p className='text-xs text-zinc-500'>Ask the customer for their 4-digit OTP to start the ride.</p>
+                                        <div className='flex justify-center'>
+                                            <input
+                                                type="text"
+                                                onChange={e => { setOtp(e.target.value.replace(/\D/g, "")); setOtpError(""); }}
+                                                placeholder="· · · ·"
+                                                className="w-48 border-2 border-zinc-200 focus:border-zinc-900 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-black outline-none transition-colors"
+                                            />
+                                        </div>
+                                        {otpError && (
+                                            <motion.p
+                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-xs text-center font-medium"
+                                            >
+                                                {otpError}
+                                            </motion.p>
+
+                                        )}
+
+                                        <div className='flex gap-2'>
+                                            <button
+                                                onClick={() => { setOtpMode(false); setOtp(""); setOtpError(""); }}
+                                                className="flex-1 border border-zinc-200 bg-white text-zinc-700 py-2.5 rounded-xl text-sm font-semibold active:scale-[0.97] transition-all"
+                                            >Cancel</button>
+
+                                            <button
+                                                // onClick={handleVerifyPickUpOtp} disabled={loadingOtp || otp.length < 4}
+                                                className="flex-1 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-bold active:scale-[0.97] transition-all"
+                                            >
+                                                {loadingOtp ? <span className='flex items-center justify-center gap-2'>Verifying...</span> : <span >Verify OTP</span>}
+                                            </button>
+                                        </div>
+
+
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {status === "started" && !dropOtpMode && (
+                                <motion.button
+                                    key="drop"
+                                    onClick={() => {
+                                        // handleSendDropOtp()
+                                    }}
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    className="w-full bg-zinc-900 hover:bg-zinc-800 active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Navigation size={15} /> Mark As Dropped <ArrowRight size={15} className="ml-1" />
+
+                                </motion.button>
+                            )}
+
+                            {status === "started" && dropOtpMode && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.98 }} transition={{ duration: 0.3 }}
+                                    className="bg-zinc-50 border border-zinc-200 rounded-2xl overflow-hidden"
+                                >
+                                    <div className='bg-zinc-950 px-4 py-3 flex items-center gap-2'>
+                                        <KeyRound size={14} className="text-amber-400" />
+                                        <p className='text-white text-xs font-bold tracking-wide uppercase'>Enter Customer OTP</p>
+                                    </div>
+                                    <div className='p-4 space-y-3'>
+                                        <p className='text-xs text-zinc-500'>Ask the customer for their 4-digit OTP to complete the ride.</p>
+                                        <div className='flex justify-center'>
+                                            <input
+                                                type="text"
+                                                onChange={e => { setDropOtp(e.target.value.replace(/\D/g, "")); setDropOtpError(""); }}
+                                                placeholder="· · · ·"
+                                                className="w-48 border-2 border-zinc-200 focus:border-zinc-900 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-black outline-none transition-colors"
+                                            />
+                                        </div>
+                                        {dropOtpError && (
+                                            <motion.p
+                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-xs text-center font-medium"
+                                            >
+                                                {dropOtpError}
+                                            </motion.p>
+
+                                        )}
+
+                                        <div className='flex gap-2'>
+                                            <button
+                                                onClick={() => { setDropOtpMode(false); setDropOtp(""); setDropOtpError(""); }}
+                                                className="flex-1 border border-zinc-200 bg-white text-zinc-700 py-2.5 rounded-xl text-sm font-semibold active:scale-[0.97] transition-all"
+                                            >Cancel</button>
+
+                                            <button
+                                                // onClick={handleVerifyDropOtp} disabled={loadingDropOtp || dropOtp.length < 4}
+                                                className="flex-1 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-bold active:scale-[0.97] transition-all"
+                                            >
+                                                {loadingDropOtp ? <span className='flex items-center justify-center gap-2'>Verifying...</span> : <span >Verify OTP</span>}
+                                            </button>
+                                        </div>
+
+
+                                    </div>
+                                </motion.div>
+                            )}
+
+                        </AnimatePresence>
+                    </div>
+
+
+
+
+
+
+
+
+
+                </motion.div>
+            </div>
         </div>
 
     )
