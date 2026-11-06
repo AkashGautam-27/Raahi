@@ -10,7 +10,7 @@ const LiveRideMap = dynamic(() => import("@/components/LiveRideMap"), { ssr: fal
 
 import PanelContent from '@/components/PanelContent'
 import { getSocket } from '@/lib/socket'
-// import CompletedScreen from '@/components/CompletedScreen'
+import CompletedScreen from '@/components/CompletedScreen'
 import { useRouter } from 'next/navigation'
 
 
@@ -74,6 +74,57 @@ function page() {
     const [loadingDropOtp, setLoadingDropOtp] = useState(false);
     const [dropOtpError, setDropOtpError] = useState("");
     const router = useRouter()
+
+    const handleSendPickUpOtp = async () => {
+        try {
+            const { data } = await axios.post("/api/partner/bookings/otp/pickup/send", { bookingId: booking?._id })
+            console.log(data)
+            setOtpMode(true)
+        } catch (error: any) {
+            console.log(error.response.data.message)
+        }
+    }
+    const handleSendDropOtp = async () => {
+        try {
+            const { data } = await axios.post("/api/partner/bookings/otp/drop/send", { bookingId: booking?._id })
+            setDropOtpMode(true)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+
+    const handleVerifyPickUpOtp = async () => {
+        setLoadingOtp(true)
+        try {
+            const { data } = await axios.post("/api/partner/bookings/otp/pickup/verify", { bookingId: booking?._id, otp })
+            setOtpVerified(true)
+            setLoadingOtp(false)
+            setOtpMode(false)
+            setStatus("started")
+            setBooking(prev => prev ? { ...prev, bookingStatus: "started" } : prev)
+        } catch (error: any) {
+            console.log(error)
+            setLoadingOtp(false)
+            setOtpError(error.response.data.message ?? "Verification failed")
+        }
+    }
+    const handleVerifyDropOtp = async () => {
+        setLoadingDropOtp(true)
+        try {
+            const { data } = await axios.post("/api/partner/bookings/otp/drop/verify", { bookingId: booking?._id, otp: dropOtp })
+            setLoadingDropOtp(false)
+            setDropOtpMode(true)
+            setStatus("completed")
+            setBooking(prev => prev ? { ...prev, bookingStatus: "completed" } : prev)
+        } catch (error: any) {
+            console.log(error)
+            setLoadingDropOtp(false)
+            setDropOtpError(error.response.data.message ?? "Verification failed")
+        }
+    }
+
+
     useEffect(() => {
         async function fetch() {
             setLoading(true)
@@ -173,6 +224,11 @@ function page() {
         )
     }
 
+    if (status === "completed" && booking) {
+        return (
+            <CompletedScreen booking={booking} role='driver' />
+        )
+    }
 
 
     const cfg = STATUS_LABEL[booking?.bookingStatus! ?? "confirmed"]
@@ -246,7 +302,7 @@ function page() {
                                 <motion.button
                                     key="arrived"
                                     onClick={() => {
-                                        // handleSendPickUpOtp()
+                                        handleSendPickUpOtp()
                                     }}
                                     initial={{ opacity: 0, y: 6 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -295,7 +351,7 @@ function page() {
                                             >Cancel</button>
 
                                             <button
-                                                // onClick={handleVerifyPickUpOtp} disabled={loadingOtp || otp.length < 4}
+                                                onClick={handleVerifyPickUpOtp} disabled={loadingOtp || otp.length < 4}
                                                 className="flex-1 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-bold active:scale-[0.97] transition-all"
                                             >
                                                 {loadingOtp ? <span className='flex items-center justify-center gap-2'>Verifying...</span> : <span >Verify OTP</span>}
@@ -311,7 +367,7 @@ function page() {
                                 <motion.button
                                     key="drop"
                                     onClick={() => {
-                                        // handleSendDropOtp()
+                                        handleSendDropOtp()
                                     }}
                                     initial={{ opacity: 0, y: 6 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -360,7 +416,7 @@ function page() {
                                             >Cancel</button>
 
                                             <button
-                                                // onClick={handleVerifyDropOtp} disabled={loadingDropOtp || dropOtp.length < 4}
+                                                onClick={handleVerifyDropOtp} disabled={loadingDropOtp || dropOtp.length < 4}
                                                 className="flex-1 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-bold active:scale-[0.97] transition-all"
                                             >
                                                 {loadingDropOtp ? <span className='flex items-center justify-center gap-2'>Verifying...</span> : <span >Verify OTP</span>}
@@ -433,7 +489,7 @@ function page() {
                                 <motion.button
                                     key="arrived"
                                     onClick={() => {
-                                        // handleSendPickUpOtp()
+                                        handleSendPickUpOtp()
                                     }}
                                     initial={{ opacity: 0, y: 6 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -482,7 +538,7 @@ function page() {
                                             >Cancel</button>
 
                                             <button
-                                                // onClick={handleVerifyPickUpOtp} disabled={loadingOtp || otp.length < 4}
+                                                onClick={handleVerifyPickUpOtp} disabled={loadingOtp || otp.length < 4}
                                                 className="flex-1 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-bold active:scale-[0.97] transition-all"
                                             >
                                                 {loadingOtp ? <span className='flex items-center justify-center gap-2'>Verifying...</span> : <span >Verify OTP</span>}
@@ -498,7 +554,7 @@ function page() {
                                 <motion.button
                                     key="drop"
                                     onClick={() => {
-                                        // handleSendDropOtp()
+                                        handleSendDropOtp()
                                     }}
                                     initial={{ opacity: 0, y: 6 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -547,7 +603,7 @@ function page() {
                                             >Cancel</button>
 
                                             <button
-                                                // onClick={handleVerifyDropOtp} disabled={loadingDropOtp || dropOtp.length < 4}
+                                                onClick={handleVerifyDropOtp} disabled={loadingDropOtp || dropOtp.length < 4}
                                                 className="flex-1 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-bold active:scale-[0.97] transition-all"
                                             >
                                                 {loadingDropOtp ? <span className='flex items-center justify-center gap-2'>Verifying...</span> : <span >Verify OTP</span>}

@@ -221,6 +221,10 @@ function page() {
                 )
 
                 }
+                <button onClick={() => router.push("/")}
+                    className="w-40 h-15 mt-4 mx-auto flex justify-center items-center border border-zinc-700 text-zinc-400 py-3.5 rounded-2xl text-sm font-semibold hover:bg-zinc-900 transition-colors ">
+                    Back To Home
+                </button>
             </div>
 
         </div>
