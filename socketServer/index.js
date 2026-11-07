@@ -36,14 +36,31 @@ const io = new Server(server, {
     }
 })
 
+app.post("/emit", async (req, res) => {
+    const { event, userId, data } = req.body
+    try {
+        const user = await User.findById(userId)
+        if (user.socketId) {
+            io.to(user.socketId).emit(event, data)
+        }
+
+        return res.json({ success: true })
+    } catch (error) {
+        return res.json({ success: false })
+    }
+})
+
+
+
 io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id)
+    console.log("socket connected", socket.id)
+
+
 
     socket.on("identity", async (data) => {
         try {
             const userId = typeof data === "object" && data !== null ? data.userId : data
-            if (!userId) return
-
+            if (!userId) return;
             socket.userId = userId
             await User.findByIdAndUpdate(userId, {
                 socketId: socket.id,
@@ -54,12 +71,10 @@ io.on("connection", (socket) => {
             console.error("Error in identity handler:", error)
         }
     })
-
     socket.on("update-location", async (data) => {
         try {
             const { userId, latitude, longitude } = data || {}
-            if (!userId || latitude == null || longitude == null) return
-
+            if (!userId || latitude == null || longitude == null) return;
             await User.findByIdAndUpdate(userId, {
                 location: {
                     type: "Point",
@@ -70,10 +85,25 @@ io.on("connection", (socket) => {
             console.error("Error in update-location handler:", error)
         }
     })
+    socket.on("join-ride", (bookingId) => {
+        if (!bookingId) return
+        socket.join(bookingId)
+        console.log(`Socket ${socket.id} joined ride room: ${bookingId}`)
+    })
+
+    socket.on("driver-location-update", ({ bookingId, latitude, longitude, status }) => {
+        if (!bookingId || latitude == null || longitude == null) return
+        io.to(bookingId).emit("driver-location", { latitude, longitude, status })
+        console.log(`Driver location update for ride ${bookingId}: ${latitude}, ${longitude}`)
+    })
+
+    socket.on("chat-message", (data) => {
+        io.to(`ride-${data.bookingId}`).emit("chat-message", data)
+    })
 
     socket.on("disconnect", async () => {
         console.log("Socket disconnected:", socket.id)
-        if (!socket.userId) return
+        if (!socket.userId) return;
         try {
             await User.findByIdAndUpdate(socket.userId, {
                 socketId: null,
@@ -84,6 +114,7 @@ io.on("connection", (socket) => {
         }
     })
 })
+
 
 server.listen(port, () => {
     console.log(`Server is running on port : ${port}`)

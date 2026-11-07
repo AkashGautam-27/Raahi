@@ -21,7 +21,6 @@ export default async function Home() {
 
   if (role === "admin") {
     return <AdminDashboard />;
-    <Footer />
   }
 
   return (

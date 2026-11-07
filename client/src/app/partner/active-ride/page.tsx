@@ -210,7 +210,7 @@ function page() {
                 <div className='w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4'>
                     <Car className='w-8 h-8 text-zinc-500' />
                 </div>
-                <h2 className='text-white text-xl font-bold mb-1'>No Active Ride</h2>
+                <h2 className='text-white text-xl font-bold mb-1'>No Active Ride Found</h2>
                 <p className='text-zinc-400 text-sm max-w-sm mb-6'>
                     You don't have any confirmed or ongoing ride at the moment.
                 </p>
