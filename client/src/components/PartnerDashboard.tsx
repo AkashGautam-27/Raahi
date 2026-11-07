@@ -11,6 +11,7 @@ import ActionCard from './ActionCard';
 import axios from 'axios';
 import PricingModel from './PricingModel';
 import { IVehicle } from '@/models/vehicle.model';
+import PartnerEarning from './PartnerEarning';
 // import PartnerEarning from './PartnerEarning';
 type Step = {
     id: number,
@@ -243,7 +244,7 @@ function PartnerDashboard() {
 
 
 
-
+                <PartnerEarning />
             </div>
             <PricingModel
                 open={showPricing}

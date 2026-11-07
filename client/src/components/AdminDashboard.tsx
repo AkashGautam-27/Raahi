@@ -6,6 +6,8 @@ import React, { useEffect, useState } from 'react';
 import Kpi from './Kpi';
 import TabButton from './TabButton';
 import ContentList from './ContentList';
+import AdminEarning from './AdminEarning';
+import Footer from './Footer';
 
 type Stats = {
     totalApprovedPartners: number
@@ -27,8 +29,8 @@ export default function AdminDashboard() {
         try {
             const { data } = await axios.get("/api/admin/dashboard")
             setStats(data.stats)
-            setPartnerReviews(data.pendingPartnersReviews || [])
-            setVehicleReviews(data.pendingVehicles || [])
+            setPartnerReviews(data.pendingPartnersReviews)
+            setVehicleReviews(data.pendingVehicles)
         } catch (error) {
             console.log(error)
         }
@@ -123,7 +125,9 @@ export default function AdminDashboard() {
                         >
                             Vehicle Reviews
                         </TabButton>
+
                     </div>
+
 
                     {/* Active Queue Content */}
                     <div>
@@ -136,9 +140,14 @@ export default function AdminDashboard() {
                         {activeTab === "vehicle" && (
                             <ContentList data={vehicleReviews} type="vehicle" />
                         )}
+
                     </div>
+
                 </div>
+                <AdminEarning />
             </main>
+
         </div>
+
     );
 }
