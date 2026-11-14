@@ -48,6 +48,20 @@ export async function POST(req: NextRequest) {
 
 
 
+        // Emit socket event to user that ride is completed
+        try {
+            await fetch(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL + "/emit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    event: "ride-completed",
+                    userId: booking.user._id?.toString(),
+                    data: { bookingId: booking._id }
+                })
+            })
+        } catch (e) {
+            console.error("Failed to emit ride-completed", e)
+        }
         return NextResponse.json(
             { message: "drop otp verified" },
             { status: 200 }

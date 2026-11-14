@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         const { bookingId } = await req.json()
         const msgs = await ChatMessage.find({
             bookingId
-        }).sort({ createdAt: -1 })
+        }).sort({ createdAt: 1 })
         return NextResponse.json(
             msgs,
             { status: 200 }

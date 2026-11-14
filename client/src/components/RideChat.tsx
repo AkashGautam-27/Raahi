@@ -31,18 +31,21 @@ function RideChat({ currentRole, bookingId, userName, driverName }: any) {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages])
     const sendMsg = async () => {
+        if (!text.trim()) return
+        const currentText = text.trim()
+        setText("")
         const socket = getSocket()
         try {
             const { data } = await axios.post("/api/chat/send", {
                 sender: currentRole,
-                text,
+                text: currentText,
                 bookingId
             })
             console.log(data)
             socket.emit("chat-message", data)
-
         } catch (error) {
             console.log(error)
+            setText(currentText)
         }
     }
 
@@ -53,9 +56,11 @@ function RideChat({ currentRole, bookingId, userName, driverName }: any) {
             })
             console.log(data)
             setMessages(data)
-            setLastMessage(data[0])
+            if (data.length > 0) {
+                setLastMessage(data[data.length - 1].text || data[data.length - 1])
+            }
         } catch (error: any) {
-            console.log(error.response.data.message)
+            console.log(error?.response?.data?.message || error.message)
         }
     }
 
@@ -66,16 +71,42 @@ function RideChat({ currentRole, bookingId, userName, driverName }: any) {
 
     useEffect(() => {
         getAllMsgs()
-    }, [])
+    }, [bookingId])
 
     useEffect(() => {
+        if (!bookingId) return
         const socket = getSocket()
-        socket.on("chat-message", (data) => {
-            setMessages(prev => [...prev, data])
-        })
 
-        return () => { socket.off("chat-message") }
-    }, [])
+        const joinRoom = () => {
+            socket.emit("join-ride", bookingId)
+        }
+
+        if (socket.connected) {
+            joinRoom()
+        } else {
+            socket.on("connect", joinRoom)
+        }
+
+        const handleChatMessage = (data: any) => {
+            if (data.bookingId === bookingId) {
+                setMessages(prev => {
+                    const alreadyExists = prev.some(
+                        msg => (msg as any)._id && data._id && (msg as any)._id === data._id
+                    )
+                    if (alreadyExists) return prev
+                    return [...prev, data]
+                })
+                setLastMessage(data.text || data)
+            }
+        }
+
+        socket.on("chat-message", handleChatMessage)
+
+        return () => {
+            socket.off("connect", joinRoom)
+            socket.off("chat-message", handleChatMessage)
+        }
+    }, [bookingId])
 
 
 
@@ -234,6 +265,12 @@ function RideChat({ currentRole, bookingId, userName, driverName }: any) {
                         value={text}
                         placeholder='Message...'
                         onChange={(e) => setText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault()
+                                sendMsg()
+                            }
+                        }}
                         className='flex-1 bg-transparent text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none py-1.5 min-w-0' />
 
                     <motion.button

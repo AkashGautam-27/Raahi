@@ -1,12 +1,13 @@
 'use client'
 import { Bike, Car, Clock, IndianRupee, MessageCircle, Phone, Truck, User } from 'lucide-react'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from "motion/react"
 import { button } from 'motion/react-client'
 import RideChat from './RideChat'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
 import Vehicle from '@/models/vehicle.model'
+import { getSocket } from '@/lib/socket'
 
 const getVehicleIcon = (vehicleType?: string) => {
     switch (vehicleType?.toLowerCase()) {
@@ -24,6 +25,43 @@ const getVehicleIcon = (vehicleType?: string) => {
 };
 
 function PanelContent({ isActive, displayDistance, displayEta, cfg, status, booking, paymentStatus, canChat, chatOpen, onChatToggle, currentRole }: any) {
+    const [unreadCount, setUnreadCount] = useState(0)
+
+    useEffect(() => {
+        if (chatOpen) {
+            setUnreadCount(0)
+        }
+    }, [chatOpen])
+
+    useEffect(() => {
+        const bookingId = booking?._id
+        if (!bookingId) return
+
+        const socket = getSocket()
+        const joinRoom = () => {
+            socket.emit("join-ride", bookingId)
+        }
+        if (socket.connected) {
+            joinRoom()
+        } else {
+            socket.on("connect", joinRoom)
+        }
+
+        const handleChatMessage = (data: any) => {
+            if (data?.bookingId === bookingId && data?.sender !== currentRole) {
+                if (!chatOpen) {
+                    setUnreadCount(prev => prev + 1)
+                }
+            }
+        }
+
+        socket.on("chat-message", handleChatMessage)
+
+        return () => {
+            socket.off("connect", joinRoom)
+            socket.off("chat-message", handleChatMessage)
+        }
+    }, [booking?._id, currentRole, chatOpen])
 
     console.log(booking)
 
@@ -101,10 +139,18 @@ function PanelContent({ isActive, displayDistance, displayEta, cfg, status, book
                             {canChat && (
                                 <button
                                     onClick={onChatToggle}
-                                    className={`flex-1 flex items-center justify-center gap-2 active:scale-[0.97] transition-all py-3 rounded-xl text-sm font-semibold ${chatOpen ? "bg-zinc-200 text-zinc-900" : "bg-zinc-900 hover:bg-zinc-800 text-white"}`}>
+                                    className={`relative flex-1 flex items-center justify-center gap-2 active:scale-[0.97] transition-all py-3 rounded-xl text-sm font-semibold ${chatOpen ? "bg-zinc-200 text-zinc-900" : "bg-zinc-900 hover:bg-zinc-800 text-white"}`}>
                                     <MessageCircle size={15} />
-                                    {chatOpen ? "Close Chat" : "Message"}
-
+                                    <span>{chatOpen ? "Close Chat" : "Message"}</span>
+                                    {!chatOpen && unreadCount > 0 && (
+                                        <motion.span
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow-md border-2 border-white animate-pulse"
+                                        >
+                                            {unreadCount > 9 ? "9+" : unreadCount}
+                                        </motion.span>
+                                    )}
                                 </button>
                             )}
                         </div>

@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv"
 dotenv.config()
 import express from "express"
@@ -8,12 +7,6 @@ import { Server } from "socket.io"
 import User from "./models/user.model.js"
 const port = process.env.PORT || 8000
 const mongodb_url = process.env.MONGODB_URI
-
-
-
-
-
-
 
 const connectDb = async () => {
     try {
@@ -50,13 +43,8 @@ app.post("/emit", async (req, res) => {
     }
 })
 
-
-
 io.on("connection", (socket) => {
     console.log("socket connected", socket.id)
-
-
-
     socket.on("identity", async (data) => {
         try {
             const userId = typeof data === "object" && data !== null ? data.userId : data
@@ -90,17 +78,14 @@ io.on("connection", (socket) => {
         socket.join(bookingId)
         console.log(`Socket ${socket.id} joined ride room: ${bookingId}`)
     })
-
     socket.on("driver-location-update", ({ bookingId, latitude, longitude, status }) => {
         if (!bookingId || latitude == null || longitude == null) return
         io.to(bookingId).emit("driver-location", { latitude, longitude, status })
         console.log(`Driver location update for ride ${bookingId}: ${latitude}, ${longitude}`)
     })
-
     socket.on("chat-message", (data) => {
-        io.to(`ride-${data.bookingId}`).emit("chat-message", data)
-    })
-
+        io.to(data.bookingId).emit("chat-message", data);
+    });
     socket.on("disconnect", async () => {
         console.log("Socket disconnected:", socket.id)
         if (!socket.userId) return;
@@ -114,7 +99,6 @@ io.on("connection", (socket) => {
         }
     })
 })
-
 
 server.listen(port, () => {
     console.log(`Server is running on port : ${port}`)
